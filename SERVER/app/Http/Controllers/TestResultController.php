@@ -17,6 +17,7 @@ class TestResultController extends Controller
         $validator = Validator::make($request->all(), [
             'user.name' => 'required|string',
             'user.surname' => 'required|string',
+            'user.trainingNumber' => 'nullable|string',
             'testType' => 'required|string',
             'timestamp' => 'required|date',
             'results' => 'required|array',
@@ -35,6 +36,7 @@ class TestResultController extends Controller
             $testResult = TestResult::create([
                 'user_name' => $request->input('user.name'),
                 'user_surname' => $request->input('user.surname'),
+                'training_number' => $request->input('user.trainingNumber'),
                 'test_type' => $request->input('testType'),
                 'completed_at' => $request->input('timestamp'),
                 'answers' => $request->input('results'),

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../models/question.dart';
 import '../widgets/question_card.dart';
@@ -17,6 +18,18 @@ class _QuizPageState extends State<QuizPage> {
   List<Question> questions = [];
   String? testType;
   bool _initialized = false;
+  
+  // Timer variables
+  Timer? _timer;
+  int _secondsRemaining = 15;
+  late int _initialTimerValue;
+
+  @override
+  void initState() {
+    super.initState();
+    _initialTimerValue = PersistenceService.getQuizTimer();
+    _secondsRemaining = _initialTimerValue;
+  }
 
   @override
   void didChangeDependencies() {
@@ -24,18 +37,15 @@ class _QuizPageState extends State<QuizPage> {
     if (!_initialized) {
       testType = ModalRoute.of(context)!.settings.arguments as String?;
       if (testType != null) {
-        // Check if test is already completed
         if (PersistenceService.isTestCompleted(testType!)) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             _navigateToResults();
           });
         }
 
-        // Load saved answers or original questions
         final saved = PersistenceService.getSavedAnswers(testType!);
         if (saved != null) {
           questions = saved;
-          // Find the first unanswered question
           int firstUnanswered = questions.indexWhere((q) => q.answer == null);
           currentIndex = firstUnanswered != -1 ? firstUnanswered : 0;
         } else {
@@ -45,12 +55,40 @@ class _QuizPageState extends State<QuizPage> {
             questions = donesQuestions.map((q) => Question(number: q.number, text: q.text)).toList();
           }
         }
+        _startTimer();
       }
       _initialized = true;
     }
   }
 
+  void _startTimer() {
+    _timer?.cancel();
+    setState(() => _secondsRemaining = _initialTimerValue);
+    _timer = Timer.periodic(Duration(seconds: 1), (timer) {
+      setState(() {
+        if (_secondsRemaining > 0) {
+          _secondsRemaining--;
+        } else {
+          _timer?.cancel();
+          _handleTimeout();
+        }
+      });
+    });
+  }
+
+  void _handleTimeout() {
+    // Si se agota el tiempo, marcamos como 0 (anulada/sin respuesta) y pasamos a la siguiente
+    _answerQuestion(0);
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
   void _navigateToResults() {
+    _timer?.cancel();
     if (testType == 'mbti') {
       Test mbtiTest = Test(name: "Meyer-Briggs", questions: questions);
       for (var q in questions) {
@@ -66,24 +104,21 @@ class _QuizPageState extends State<QuizPage> {
   }
 
   void _answerQuestion(int value) async {
+    _timer?.cancel();
     setState(() {
       questions[currentIndex].answer = value;
     });
     
-    // Auto-save progress
     await PersistenceService.saveAnswers(testType!, questions);
 
     if (currentIndex < questions.length - 1) {
       setState(() {
         currentIndex++;
       });
+      _startTimer();
     } else {
-      // Mark as completed
       await PersistenceService.setTestCompleted(testType!, true);
-      
-      // Send to API
       ApiService.sendResults(testType: testType!, questions: questions);
-      
       _navigateToResults();
     }
   }
@@ -114,6 +149,24 @@ class _QuizPageState extends State<QuizPage> {
           icon: Icon(Icons.close, color: Colors.black54),
           onPressed: () => Navigator.pop(context),
         ),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 16.0),
+            child: Center(
+              child: Container(
+                padding: EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: _secondsRemaining < 5 ? Colors.red : Colors.indigo,
+                  shape: BoxShape.circle,
+                ),
+                child: Text(
+                  "$_secondsRemaining",
+                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ),
+          )
+        ],
       ),
       body: SafeArea(
         child: Column(
@@ -146,7 +199,12 @@ class _QuizPageState extends State<QuizPage> {
                   ),
                   if (currentIndex > 0)
                     GestureDetector(
-                      onTap: () => setState(() => currentIndex--),
+                      onTap: () {
+                        setState(() {
+                          currentIndex--;
+                        });
+                        _startTimer();
+                      },
                       child: Text(
                         "ANTERIOR",
                         style: TextStyle(

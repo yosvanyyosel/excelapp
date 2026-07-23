@@ -1,9 +1,22 @@
 import 'package:flutter/material.dart';
+import '../services/persistence_service.dart';
+import '../services/api_service.dart';
 import 'profile_page.dart';
 
-class SelectionPage extends StatelessWidget {
+class SelectionPage extends StatefulWidget {
+  @override
+  _SelectionPageState createState() => _SelectionPageState();
+}
+
+class _SelectionPageState extends State<SelectionPage> {
   @override
   Widget build(BuildContext context) {
+    // Construimos la URL de la foto (Laravel storage)
+    final String photoPath = PersistenceService.getPairPhoto();
+    final String photoUrl = photoPath.isNotEmpty
+        ? "${ApiService.baseUrl}/storage/$photoPath"
+        : "";
+
     return Scaffold(
       body: Container(
         width: double.infinity,
@@ -16,27 +29,41 @@ class SelectionPage extends StatelessWidget {
         ),
         child: SafeArea(
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
             children: [
+              // Barra Superior con Dropdown de Opciones
               Align(
                 alignment: Alignment.topRight,
                 child: Padding(
-                  padding: const EdgeInsets.only(right: 16.0),
+                  padding: const EdgeInsets.only(right: 8.0),
                   child: PopupMenuButton<String>(
                     icon: Icon(Icons.more_vert, color: Colors.white, size: 30),
-                    onSelected: (value) {
+                    onSelected: (value) async {
                       if (value == 'perfil') {
-                        Navigator.pushNamed(context, '/profile');
+                        await Navigator.pushNamed(context, '/profile');
+                        setState(() {}); // Refrescar al volver
+                      } else if (value == 'logout') {
+                        await PersistenceService.clearAll();
+                        Navigator.pushReplacementNamed(context, '/login');
                       }
                     },
-                    itemBuilder: (BuildContext context) => [
-                      PopupMenuItem<String>(
+                    itemBuilder: (context) => [
+                      PopupMenuItem(
                         value: 'perfil',
                         child: Row(
                           children: [
                             Icon(Icons.person, color: Colors.indigo),
-                            SizedBox(width: 8),
-                            Text("Perfil"),
+                            SizedBox(width: 10),
+                            Text("Mi Perfil"),
+                          ],
+                        ),
+                      ),
+                      PopupMenuItem(
+                        value: 'logout',
+                        child: Row(
+                          children: [
+                            Icon(Icons.exit_to_app, color: Colors.red),
+                            SizedBox(width: 10),
+                            Text("Cerrar Sesión"),
                           ],
                         ),
                       ),
@@ -44,51 +71,70 @@ class SelectionPage extends StatelessWidget {
                   ),
                 ),
               ),
+
+              // Información de la Pareja (Desde Servidor)
               Spacer(),
-              Icon(Icons.auto_awesome, size: 80, color: Colors.white),
+              Container(
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white, width: 4),
+                  boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 10)],
+                ),
+                child: CircleAvatar(
+                  radius: 60,
+                  backgroundColor: Colors.grey[300],
+                  backgroundImage: photoUrl.isNotEmpty
+                      ? NetworkImage(photoUrl)
+                      : null,
+                  child: photoUrl.isEmpty
+                      ? Icon(Icons.people, size: 60, color: Colors.white)
+                      : null,
+                ),
+              ),
               SizedBox(height: 20),
               Text(
-                "Centro de\nDescubrimiento",
-                textAlign: TextAlign.center,
+                PersistenceService.getPairName().toUpperCase(),
                 style: TextStyle(
-                  fontSize: 32,
+                  fontSize: 22,
                   fontWeight: FontWeight.bold,
                   color: Colors.white,
-                  letterSpacing: 1.5,
+                  letterSpacing: 2,
                 ),
               ),
-              SizedBox(height: 10),
               Text(
-                "Descubre tu potencial y tus dones",
-                style: TextStyle(color: Colors.white70, fontSize: 16),
+                PersistenceService.getCenterName(),
+                style: TextStyle(color: Colors.white70, fontSize: 14),
               ),
-              SizedBox(height: 60),
+
+              SizedBox(height: 50),
+
+              // Botones de Test
               _buildMenuButton(
                 context,
-                title: "Test de Personalidad",
-                subtitle: "Indicador Meyer-Briggs (MBTI)",
-                icon: Icons.person_search,
-                route: '/quiz',
-                arg: 'mbti',
+                "Test de Personalidad",
+                "mbti",
+                Icons.psychology,
               ),
               SizedBox(height: 20),
               _buildMenuButton(
                 context,
-                title: "Test de Dones",
-                subtitle: "Dones Espirituales (98 ítems)",
-                icon: Icons.card_giftcard,
-                route: '/quiz',
-                arg: 'dones',
+                "Test de Dones",
+                "dones",
+                Icons.auto_awesome,
               ),
+
               Spacer(flex: 2),
-              if (UserData.name.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 20.0),
-                  child: Text(
-                    "Bienvenido, ${UserData.name} ${UserData.surname}",
-                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+
+              Padding(
+                padding: const EdgeInsets.only(bottom: 20),
+                child: Text(
+                  "Bienvenido, ${UserData.name}",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w300,
                   ),
                 ),
+              ),
             ],
           ),
         ),
@@ -97,52 +143,35 @@ class SelectionPage extends StatelessWidget {
   }
 
   Widget _buildMenuButton(
-    BuildContext context, {
-    required String title,
-    required String subtitle,
-    required IconData icon,
-    required String route,
-    required String arg,
-  }) {
+    BuildContext context,
+    String title,
+    String type,
+    IconData icon,
+  ) {
+    bool isDone = PersistenceService.isTestCompleted(type);
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 30),
+      padding: const EdgeInsets.symmetric(horizontal: 40),
       child: ElevatedButton(
-        onPressed: () => Navigator.pushNamed(context, route, arguments: arg),
         style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.white,
-          foregroundColor: Colors.indigo[900],
-          padding: EdgeInsets.symmetric(vertical: 20, horizontal: 20),
+          backgroundColor: isDone ? Colors.green[400] : Colors.white,
+          foregroundColor: isDone ? Colors.white : Colors.indigo[900],
+          minimumSize: Size(double.infinity, 65),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(15),
           ),
           elevation: 5,
         ),
+        onPressed: () => Navigator.pushNamed(context, '/quiz', arguments: type),
         child: Row(
           children: [
-            Container(
-              padding: EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.indigo[50],
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(icon, size: 30),
-            ),
+            Icon(isDone ? Icons.check_circle : icon),
             SizedBox(width: 20),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                Text(
-                  subtitle,
-                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                ),
-              ],
+            Text(
+              title,
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             Spacer(),
-            Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
+            Icon(Icons.arrow_forward_ios, size: 14),
           ],
         ),
       ),

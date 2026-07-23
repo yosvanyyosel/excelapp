@@ -6,6 +6,7 @@ import '../models/question.dart';
 import '../models/don.dart';
 import '../models/test.dart';
 import '../pages/profile_page.dart';
+import '../services/persistence_service.dart';
 import '../data/mbti_details.dart';
 
 class PdfService {
@@ -16,20 +17,8 @@ class PdfService {
     final pdf = pw.Document();
 
     final List<String> codes = [
-      "Adm",
-      "Dis",
-      "Evan",
-      "Exh",
-      "Fe",
-      "Dar",
-      "Con",
-      "Lid",
-      "Mis",
-      "Past",
-      "Pro",
-      "Serv",
-      "Ense",
-      "Sab",
+      "Adm", "Dis", "Evan", "Exh", "Fe", "Dar", "Con",
+      "Lid", "Mis", "Past", "Pro", "Serv", "Ense", "Sab",
     ];
 
     pdf.addPage(
@@ -41,18 +30,23 @@ class PdfService {
             child: pw.Row(
               mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
               children: [
-                pw.Text(
-                  "Test de Dones Espirituales",
-                  style: pw.TextStyle(
-                    fontSize: 24,
-                    fontWeight: pw.FontWeight.bold,
-                  ),
+                pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    pw.Text(
+                      "Test de Dones Espirituales",
+                      style: pw.TextStyle(fontSize: 22, fontWeight: pw.FontWeight.bold),
+                    ),
+                    pw.Text(PersistenceService.getCenterName(), style: pw.TextStyle(fontSize: 12)),
+                  ],
                 ),
                 pw.Text(DateTime.now().toString().substring(0, 10)),
               ],
             ),
           ),
-          pw.Paragraph(text: "Nombre: ${UserData.name} ${UserData.surname}"),
+          pw.SizedBox(height: 10),
+          pw.Paragraph(text: "Participante: ${UserData.name}"),
+          pw.Paragraph(text: "Pareja: ${PersistenceService.getPairName()}"),
           pw.SizedBox(height: 20),
           pw.Text(
             "Cuadro de Calificación",
@@ -120,7 +114,6 @@ class PdfService {
     return pw.Table(
       border: pw.TableBorder.all(),
       children: [
-        // Rows
         ...List.generate(
           rows,
           (r) => pw.TableRow(
@@ -131,48 +124,31 @@ class PdfService {
                 alignment: pw.Alignment.center,
                 child: pw.Column(
                   children: [
-                    pw.Text(
-                      "${(r * cols) + c + 1}",
-                      style: pw.TextStyle(fontSize: 8),
-                    ),
-                    pw.Text(
-                      "${grid[r][c]}",
-                      style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
-                    ),
+                    pw.Text("${(r * cols) + c + 1}", style: pw.TextStyle(fontSize: 8)),
+                    pw.Text("${grid[r][c]}", style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
                   ],
                 ),
               ),
             ),
           ),
         ),
-        // Totals
         pw.TableRow(
           children: List.generate(
             cols,
             (c) => pw.Container(
               padding: pw.EdgeInsets.all(4),
               alignment: pw.Alignment.center,
-              child: pw.Text(
-                "${totals[c]}",
-                style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
-              ),
+              child: pw.Text("${totals[c]}", style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
             ),
           ),
         ),
-        // Codes
         pw.TableRow(
           children: List.generate(
             cols,
             (c) => pw.Container(
               padding: pw.EdgeInsets.all(4),
               alignment: pw.Alignment.center,
-              child: pw.Text(
-                codes[c],
-                style: pw.TextStyle(
-                  fontSize: 8,
-                  fontWeight: pw.FontWeight.bold,
-                ),
-              ),
+              child: pw.Text(codes[c], style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold)),
             ),
           ),
         ),
@@ -192,49 +168,38 @@ class PdfService {
             child: pw.Row(
               mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
               children: [
-                pw.Text(
-                  "Test de Personalidad MBTI",
-                  style: pw.TextStyle(
-                    fontSize: 24,
-                    fontWeight: pw.FontWeight.bold,
-                  ),
+                pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    pw.Text(
+                      "Test de Personalidad MBTI",
+                      style: pw.TextStyle(fontSize: 22, fontWeight: pw.FontWeight.bold),
+                    ),
+                    pw.Text(PersistenceService.getCenterName(), style: pw.TextStyle(fontSize: 12)),
+                  ],
                 ),
                 pw.Text(DateTime.now().toString().substring(0, 10)),
               ],
             ),
           ),
-          pw.Paragraph(text: "Nombre: ${UserData.name} ${UserData.surname}"),
+          pw.SizedBox(height: 10),
+          pw.Paragraph(text: "Participante: ${UserData.name}"),
+          pw.Paragraph(text: "Pareja: ${PersistenceService.getPairName()}"),
           pw.SizedBox(height: 20),
           pw.Center(
             child: pw.Column(
               children: [
-                pw.Text(
-                  "Tipo(s) de Personalidad:",
-                  style: pw.TextStyle(fontSize: 16),
-                ),
-                pw.Text(
-                  types.join(" / "),
-                  style: pw.TextStyle(
-                    fontSize: 32,
-                    fontWeight: pw.FontWeight.bold,
-                    color: PdfColors.indigo,
-                  ),
-                ),
+                pw.Text("Tipo(s) de Personalidad:", style: pw.TextStyle(fontSize: 16)),
+                pw.Text(types.join(" / "), style: pw.TextStyle(fontSize: 32, fontWeight: pw.FontWeight.bold, color: PdfColors.indigo)),
               ],
             ),
           ),
           pw.SizedBox(height: 30),
-          pw.Text(
-            "Puntajes por Dimensión",
-            style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold),
-          ),
+          pw.Text("Puntajes por Dimensión", style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold)),
           pw.SizedBox(height: 10),
           _buildMbtiScores(test),
           pw.SizedBox(height: 30),
-          pw.Text(
-            "Interpretación Detallada",
-            style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold),
-          ),
+          pw.Text("Interpretación Detallada", style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold)),
           pw.SizedBox(height: 10),
           ...types.map((type) {
             final detail = mbtiDetails[type];
@@ -242,13 +207,7 @@ class PdfService {
             return pw.Column(
               crossAxisAlignment: pw.CrossAxisAlignment.start,
               children: [
-                pw.Text(
-                  "${detail.name} ($type)",
-                  style: pw.TextStyle(
-                    fontSize: 14,
-                    fontWeight: pw.FontWeight.bold,
-                  ),
-                ),
+                pw.Text("${detail.name} ($type)", style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold)),
                 pw.SizedBox(height: 5),
                 pw.Text(detail.description),
                 pw.SizedBox(height: 10),
@@ -259,10 +218,7 @@ class PdfService {
                       child: pw.Column(
                         crossAxisAlignment: pw.CrossAxisAlignment.start,
                         children: [
-                          pw.Text(
-                            "Fortalezas:",
-                            style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
-                          ),
+                          pw.Text("Fortalezas:", style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
                           ...detail.strengths.map((s) => pw.Text("• $s")),
                         ],
                       ),
@@ -271,10 +227,7 @@ class PdfService {
                       child: pw.Column(
                         crossAxisAlignment: pw.CrossAxisAlignment.start,
                         children: [
-                          pw.Text(
-                            "Debilidades:",
-                            style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
-                          ),
+                          pw.Text("Debilidades:", style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
                           ...detail.weaknesses.map((w) => pw.Text("• $w")),
                         ],
                       ),
@@ -298,30 +251,10 @@ class PdfService {
   static pw.Widget _buildMbtiScores(Test test) {
     return pw.Column(
       children: [
-        _buildPdfDimensionRow(
-          "Extroversión (E)",
-          "Introversión (I)",
-          test.scores["E"] ?? 0,
-          test.scores["I"] ?? 0,
-        ),
-        _buildPdfDimensionRow(
-          "Sensación (S)",
-          "Intuición (N)",
-          test.scores["S"] ?? 0,
-          test.scores["N"] ?? 0,
-        ),
-        _buildPdfDimensionRow(
-          "Pensamiento (T)",
-          "Sentimiento (F)",
-          test.scores["T"] ?? 0,
-          test.scores["F"] ?? 0,
-        ),
-        _buildPdfDimensionRow(
-          "Juicio (J)",
-          "Percepción (P)",
-          test.scores["J"] ?? 0,
-          test.scores["P"] ?? 0,
-        ),
+        _buildPdfDimensionRow("Extroversión (E)", "Introversión (I)", test.scores["E"] ?? 0, test.scores["I"] ?? 0),
+        _buildPdfDimensionRow("Sensación (S)", "Intuición (N)", test.scores["S"] ?? 0, test.scores["N"] ?? 0),
+        _buildPdfDimensionRow("Pensamiento (T)", "Sentimiento (F)", test.scores["T"] ?? 0, test.scores["F"] ?? 0),
+        _buildPdfDimensionRow("Juicio (J)", "Percepción (P)", test.scores["J"] ?? 0, test.scores["P"] ?? 0),
       ],
     );
   }
@@ -337,18 +270,8 @@ class PdfService {
       child: pw.Row(
         mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
         children: [
-          pw.Text(
-            "$left: $leftVal",
-            style: pw.TextStyle(
-              fontWeight: leftVal >= rightVal ? pw.FontWeight.bold : null,
-            ),
-          ),
-          pw.Text(
-            "$rightVal :$right",
-            style: pw.TextStyle(
-              fontWeight: rightVal >= leftVal ? pw.FontWeight.bold : null,
-            ),
-          ),
+          pw.Text("$left: $leftVal", style: pw.TextStyle(fontWeight: leftVal >= rightVal ? pw.FontWeight.bold : null)),
+          pw.Text("$rightVal :$right", style: pw.TextStyle(fontWeight: rightVal >= leftVal ? pw.FontWeight.bold : null)),
         ],
       ),
     );

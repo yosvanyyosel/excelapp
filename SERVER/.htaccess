@@ -1,0 +1,15 @@
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /
+
+    # Redirección HTTP a HTTPS y agregar www (en una sola regla)
+    # RewriteCond %{HTTPS} off [OR]
+   #  RewriteCond %{HTTP_HOST} !^www\.fielcontrol\.cu$ [NC]
+    # RewriteRule ^(.*)$ https://www.fielcontrol.cu/$1 [R=301,L]
+
+
+    # Reglas de enrutamiento de Laravel para el resto
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^ index.php [L]
+</IfModule>

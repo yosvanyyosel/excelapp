@@ -3,8 +3,50 @@ import '../models/question.dart';
 import '../models/don.dart';
 import '../widgets/result_table.dart';
 import '../services/pdf_service.dart';
+import '../services/api_service.dart';
+import '../services/persistence_service.dart';
 
-class ResultPage extends StatelessWidget {
+class ResultPage extends StatefulWidget {
+  @override
+  _ResultPageState createState() => _ResultPageState();
+}
+
+class _ResultPageState extends State<ResultPage> {
+  bool _isSending = false;
+  bool _isSent = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _isSent = PersistenceService.isTestCompleted('dones');
+  }
+
+  void _sendResults(List<Question> questions, List<Don> sortedDones) async {
+    setState(() => _isSending = true);
+    try {
+      await ApiService.sendResults(
+        testType: 'dones',
+        questions: questions,
+        extraData: {
+          'dones_ranking': sortedDones.map((d) => {'code': d.code, 'score': d.score}).toList(),
+        },
+      );
+      await PersistenceService.setTestCompleted('dones', true);
+      setState(() {
+        _isSent = true;
+        _isSending = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Resultados de Dones enviados con éxito")),
+      );
+    } catch (e) {
+      setState(() => _isSending = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Error al enviar resultados")),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final questions = ModalRoute.of(context)!.settings.arguments as List<Question>;
@@ -73,6 +115,11 @@ class ResultPage extends StatelessWidget {
               SizedBox(height: 12),
               DonesResultTable(questions: questions),
               
+              SizedBox(height: 24),
+              
+              // Botón de Envío al Servidor
+              _buildSendButton(questions, sortedDones),
+
               SizedBox(height: 32),
               _buildSectionTitle("Dones Identificados (Orden de Fortaleza)"),
               SizedBox(height: 12),
@@ -150,6 +197,30 @@ class ResultPage extends StatelessWidget {
               SizedBox(height: 30),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSendButton(List<Question> questions, List<Don> sortedDones) {
+    return Container(
+      width: double.infinity,
+      child: ElevatedButton.icon(
+        onPressed: (_isSending || _isSent) ? null : () => _sendResults(questions, sortedDones),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: _isSent ? Colors.green : Colors.indigo[700],
+          foregroundColor: Colors.white,
+          disabledBackgroundColor: _isSent ? Colors.green : Colors.grey,
+          disabledForegroundColor: Colors.white,
+          padding: EdgeInsets.symmetric(vertical: 16),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+        icon: _isSending 
+          ? SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+          : Icon(_isSent ? Icons.cloud_done : Icons.cloud_upload),
+        label: Text(
+          _isSending ? "ENVIANDO..." : (_isSent ? "RESULTADOS ENVIADOS" : "ENVIAR RESULTADOS AL SERVIDOR"),
+          style: TextStyle(fontWeight: FontWeight.bold),
         ),
       ),
     );

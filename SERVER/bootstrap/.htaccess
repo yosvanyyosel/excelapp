@@ -1,0 +1,19 @@
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /
+
+    # Redirección a http://www.yosvapps.cu (sin SSL)
+    RewriteCond %{HTTP_HOST} !^www\.yosvapps\.cu$ [NC]
+    RewriteRule ^(.*)$ http://www.yosvapps.cu/$1 [R=301,L]
+
+    # Excluir la carpeta /fielcontrol/ para que no se pase a index.php
+    RewriteRule ^fielcontrol(/.*)?$ - [L]
+	
+    # Excluir la carpeta /multialmacen/ para que no se pase a index.php
+    RewriteRule ^multialmacen(/.*)?$ - [L]
+
+    # Reglas de enrutamiento de Laravel para el resto
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^ index.php [L]
+</IfModule>

@@ -14,13 +14,25 @@ Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 
 Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('dashboard');
-    
+    Route::get('/centers/{id}', [AdminController::class, 'showCenter'])->name('centers.show');
+
+    // Detalle de Pareja
+    Route::get('/centers/{centerId}/pairs/{pairName}', [AdminController::class, 'showPair'])->name('pairs.show');
+
     // Gestión de Centros
     Route::post('/centers', [AdminController::class, 'createCenter'])->name('centers.create');
-    
-    // Gestión de Participantes
-    Route::post('/participants', [AdminController::class, 'addParticipant'])->name('participants.add');
-    
+    Route::put('/centers/{id}', [AdminController::class, 'updateCenter'])->name('centers.update');
+    Route::delete('/centers/{id}', [AdminController::class, 'deleteCenter'])->name('centers.delete');
+
+    // Gestión de Parejas
+    Route::post('/pairs', [AdminController::class, 'addPair'])->name('pairs.add');
+    Route::post('/pairs/update', [AdminController::class, 'updatePair'])->name('pairs.update');
+    Route::post('/pairs/delete', [AdminController::class, 'deletePair'])->name('pairs.delete');
+
+    // Gestión de Admins
+    Route::put('/admins/{id}', [AdminController::class, 'updateAdmin'])->name('admins.update');
+    Route::delete('/admins/{id}', [AdminController::class, 'deleteAdmin'])->name('admins.delete');
+
     // PDF
     Route::get('/pdf/pair-cover/{userId}', [AdminController::class, 'generatePairPdf'])->name('pdf.pair');
 });

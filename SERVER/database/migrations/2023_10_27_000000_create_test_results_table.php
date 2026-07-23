@@ -6,18 +6,15 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
-        Schema::create('test_results', function (Blueprint $table) {
-            $table->id();
-            $table->string('user_name');
-            $table->string('user_surname');
-            $table->string('test_type');
+        Schema::create('test_results', function (Blueprint $table) {        $table->id();
+            $table->string('user_name');     // Nombre del participante
+            $table->string('pair_name');     // Nombre de su pareja
+            $table->string('center_name');   // Centro de descubrimiento
+            $table->string('test_type');     // 'mbti' o 'dones'
             $table->timestamp('completed_at');
-            $table->json('answers'); // Guarda el array completo de respuestas
+            $table->json('answers');         // Las respuestas en JSON
             $table->timestamps();
         });
     }

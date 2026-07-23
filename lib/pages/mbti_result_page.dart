@@ -1,8 +1,52 @@
 import 'package:flutter/material.dart';
 import '../models/test.dart';
 import '../services/pdf_service.dart';
+import '../services/api_service.dart';
+import '../services/persistence_service.dart';
 
-class MbtiResultPage extends StatelessWidget {
+class MbtiResultPage extends StatefulWidget {
+  @override
+  _MbtiResultPageState createState() => _MbtiResultPageState();
+}
+
+class _MbtiResultPageState extends State<MbtiResultPage> {
+  bool _isSending = false;
+  bool _isSent = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Verificamos si ya se marcó como completado (y por ende enviado en quiz_page)
+    _isSent = PersistenceService.isTestCompleted('mbti');
+  }
+
+  void _sendResults(Test test, List<String> types) async {
+    setState(() => _isSending = true);
+    try {
+      await ApiService.sendResults(
+        testType: 'mbti',
+        questions: test.questions,
+        extraData: {
+          'mbti_types': types,
+          'scores': test.scores,
+        },
+      );
+      await PersistenceService.setTestCompleted('mbti', true);
+      setState(() {
+        _isSent = true;
+        _isSending = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Resultados enviados con éxito")),
+      );
+    } catch (e) {
+      setState(() => _isSending = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Error al enviar resultados")),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final Test test = ModalRoute.of(context)!.settings.arguments as Test;
@@ -44,6 +88,11 @@ class MbtiResultPage extends StatelessWidget {
             SizedBox(height: 12),
             _buildDimensionComparison(test),
             SizedBox(height: 32),
+            
+            // Botón de Envío al Servidor
+            _buildSendButton(test, types),
+            
+            SizedBox(height: 32),
             Text(
               "Interpretación",
               style: TextStyle(
@@ -80,6 +129,30 @@ class MbtiResultPage extends StatelessWidget {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSendButton(Test test, List<String> types) {
+    return Container(
+      width: double.infinity,
+      child: ElevatedButton.icon(
+        onPressed: (_isSending || _isSent) ? null : () => _sendResults(test, types),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: _isSent ? Colors.green : Colors.indigo[700],
+          foregroundColor: Colors.white,
+          disabledBackgroundColor: _isSent ? Colors.green : Colors.grey,
+          disabledForegroundColor: Colors.white,
+          padding: EdgeInsets.symmetric(vertical: 16),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+        icon: _isSending 
+          ? SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+          : Icon(_isSent ? Icons.cloud_done : Icons.cloud_upload),
+        label: Text(
+          _isSending ? "ENVIANDO..." : (_isSent ? "RESULTADOS ENVIADOS" : "ENVIAR RESULTADOS AL SERVIDOR"),
+          style: TextStyle(fontWeight: FontWeight.bold),
         ),
       ),
     );
@@ -179,7 +252,9 @@ class MbtiResultPage extends StatelessWidget {
   ) {
     double total = (leftVal + rightVal).toDouble();
     if (total == 0) total = 1;
-    double percent = leftVal / total;
+    
+    bool leftWins = leftVal >= rightVal;
+    double percent = leftWins ? (leftVal / total) : (rightVal / total);
 
     return Column(
       children: [
@@ -189,25 +264,26 @@ class MbtiResultPage extends StatelessWidget {
             Text(
               "$leftLabel: $leftVal",
               style: TextStyle(
-                fontWeight: leftVal >= rightVal
+                fontWeight: leftWins
                     ? FontWeight.bold
                     : FontWeight.normal,
-                color: leftVal >= rightVal ? Colors.indigo : Colors.grey,
+                color: leftWins ? Colors.indigo : Colors.grey,
               ),
             ),
             Text(
               "$rightVal :$rightLabel",
               style: TextStyle(
-                fontWeight: rightVal >= leftVal
+                fontWeight: !leftWins
                     ? FontWeight.bold
                     : FontWeight.normal,
-                color: rightVal >= leftVal ? Colors.indigo : Colors.grey,
+                color: !leftWins ? Colors.indigo : Colors.grey,
               ),
             ),
           ],
         ),
         SizedBox(height: 8),
         Stack(
+          alignment: leftWins ? Alignment.centerLeft : Alignment.centerRight,
           children: [
             Container(
               height: 12,
@@ -224,7 +300,9 @@ class MbtiResultPage extends StatelessWidget {
                   width: constraints.maxWidth * percent,
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
-                      colors: [Colors.indigo, Colors.indigoAccent],
+                      colors: leftWins 
+                        ? [Colors.indigo, Colors.indigoAccent]
+                        : [Colors.indigoAccent, Colors.indigo],
                     ),
                     borderRadius: BorderRadius.circular(6),
                   ),
@@ -307,40 +385,23 @@ class MbtiResultPage extends StatelessWidget {
 
   String _getTypeName(String type) {
     switch (type) {
-      case "ISTJ":
-        return "El Inspector";
-      case "ISFJ":
-        return "El Protector";
-      case "INFJ":
-        return "El Consejero";
-      case "INTJ":
-        return "La Mente Maestra";
-      case "ISTP":
-        return "El Artesano";
-      case "ISFP":
-        return "El Compositor";
-      case "INFP":
-        return "El Sanador";
-      case "INTP":
-        return "El Arquitecto";
-      case "ESTP":
-        return "El Promotor";
-      case "ESFP":
-        return "El Actor";
-      case "ENFP":
-        return "El Campeón";
-      case "ENTP":
-        return "El Inventor";
-      case "ESTJ":
-        return "El Supervisor";
-      case "ESFJ":
-        return "El Proveedor";
-      case "ENFJ":
-        return "El Profesor";
-      case "ENTJ":
-        return "El Mariscal de Campo";
-      default:
-        return "";
+      case "ISTJ": return "El Inspector";
+      case "ISFJ": return "El Protector";
+      case "INFJ": return "El Consejero";
+      case "INTJ": return "La Mente Maestra";
+      case "ISTP": return "El Artesano";
+      case "ISFP": return "El Compositor";
+      case "INFP": return "El Sanador";
+      case "INTP": return "El Arquitecto";
+      case "ESTP": return "El Promotor";
+      case "ESFP": return "El Actor";
+      case "ENFP": return "El Campeón";
+      case "ENTP": return "El Inventor";
+      case "ESTJ": return "El Supervisor";
+      case "ESFJ": return "El Proveedor";
+      case "ENFJ": return "El Profesor";
+      case "ENTJ": return "El Mariscal de Campo";
+      default: return "";
     }
   }
 

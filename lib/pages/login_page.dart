@@ -22,16 +22,26 @@ class _LoginPageState extends State<LoginPage> {
 
       if (response['status'] == 'success') {
         final userData = response['user'];
+        
+        // Guardamos el token de autenticación
+        if (response['token'] != null) {
+          await PersistenceService.saveLoginToken(response['token']);
+        }
+
+        // Guardamos el nombre del participante
         await PersistenceService.saveProfile(
-          userData['name'],
-          '', // Surname can be empty if not provided by API
-          '', // Training number if not provided
+          userData['name'] ?? '',
         );
-        // Save other data like pair_name, pair_photo, center_info
+
+        // Guardamos información del centro y la pareja desde el servidor
         await PersistenceService.saveCenterInfo(userData['center']);
         await PersistenceService.savePairInfo(userData['pair_name'], userData['pair_photo']);
 
-        Navigator.pushReplacementNamed(context, '/');
+        if (PersistenceService.isProfileComplete()) {
+          Navigator.pushReplacementNamed(context, '/');
+        } else {
+          Navigator.pushReplacementNamed(context, '/profile');
+        }
       } else {
         _showError(response['message'] ?? "Error de login");
       }

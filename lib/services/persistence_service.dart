@@ -9,16 +9,41 @@ class PersistenceService {
     _prefs = await SharedPreferences.getInstance();
   }
 
-  // Perfil
-  static String getName() => _prefs.getString('name') ?? "";
-  static String getSurname() => _prefs.getString('surname') ?? "";
-
-  static Future<void> saveProfile(String name, String surname) async {
-    await _prefs.setString('name', name);
-    await _prefs.setString('surname', surname);
+  // Auth
+  static Future<void> saveLoginToken(String token) async {
+    await _prefs.setString('auth_token', token);
   }
 
-  // Método solicitado para verificar si el perfil está completo
+  static String? getLoginToken() => _prefs.getString('auth_token');
+
+  static bool isLoggedIn() => getLoginToken() != null;
+
+  // Perfil
+  static String getName() => _prefs.getString('name') ?? "";
+
+  static Future<void> saveProfile(String name) async {
+    await _prefs.setString('name', name);
+  }
+
+  // Info del Centro y Pareja
+  static Future<void> saveCenterInfo(Map<String, dynamic>? center) async {
+    if (center != null) {
+      await _prefs.setString('center_name', center['name'] ?? "");
+      await _prefs.setInt('quiz_timer', center['timer'] ?? 15);
+    }
+  }
+
+  static String getCenterName() => _prefs.getString('center_name') ?? "Centro de Descubrimiento";
+  static int getQuizTimer() => _prefs.getInt('quiz_timer') ?? 15;
+
+  static Future<void> savePairInfo(String? name, String? photo) async {
+    await _prefs.setString('pair_name', name ?? "");
+    await _prefs.setString('pair_photo', photo ?? "");
+  }
+
+  static String getPairName() => _prefs.getString('pair_name') ?? "";
+  static String getPairPhoto() => _prefs.getString('pair_photo') ?? "";
+
   static bool isProfileComplete() => getName().isNotEmpty;
 
   static bool hasProfile() => isProfileComplete();
@@ -28,6 +53,13 @@ class PersistenceService {
 
   static Future<void> setTestCompleted(String type, bool completed) async {
     await _prefs.setBool('completed_$type', completed);
+  }
+
+  // Sincronización con el servidor
+  static bool isTestSent(String type) => _prefs.getBool('sent_$type') ?? false;
+
+  static Future<void> setTestSent(String type, bool sent) async {
+    await _prefs.setBool('sent_$type', sent);
   }
 
   // Guardar respuestas
