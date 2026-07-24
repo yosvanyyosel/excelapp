@@ -3,7 +3,7 @@ import '../models/question.dart';
 import '../services/persistence_service.dart';
 
 class ApiService {
-  static const String baseUrl = 'http://192.168.42.96:8000';
+  static const String baseUrl = 'http://192.168.42.235:8000';
   static const String apiUrl = '$baseUrl/api';
 
   static final Dio _dio = Dio(

@@ -13,13 +13,11 @@ class TestResultController extends Controller
      */
     public function store(Request $request)
     {
-        // Validar la estructura de entrada
+        // Validar la estructura de entrada básica
         $validator = Validator::make($request->all(), [
             'user.name' => 'required|string',
-            'user.surname' => 'required|string',
-            'user.trainingNumber' => 'nullable|string',
             'testType' => 'required|string',
-            'timestamp' => 'required|date',
+            'timestamp' => 'required',
             'results' => 'required|array',
         ]);
 
@@ -32,14 +30,20 @@ class TestResultController extends Controller
         }
 
         try {
+            $data = $request->all();
+
+            // Extraer metadata (todo lo que no es la estructura base)
+            $metadata = collect($data)->except(['user', 'testType', 'timestamp', 'results'])->toArray();
+
             // Guardar en la base de datos
             $testResult = TestResult::create([
-                'user_name' => $request->input('user.name'),
-                'user_surname' => $request->input('user.surname'),
-                'training_number' => $request->input('user.trainingNumber'),
-                'test_type' => $request->input('testType'),
-                'completed_at' => $request->input('timestamp'),
-                'answers' => $request->input('results'),
+                'user_name' => $data['user']['name'],
+                'pair_name' => $data['user']['pair_name'] ?? null,
+                'center_name' => $data['user']['center_name'] ?? null,
+                'test_type' => $data['testType'],
+                'completed_at' => $data['timestamp'],
+                'answers' => $data['results'],
+                'metadata' => $metadata,
             ]);
 
             return response()->json([

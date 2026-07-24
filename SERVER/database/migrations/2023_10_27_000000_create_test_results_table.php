@@ -8,13 +8,16 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('test_results', function (Blueprint $table) {        $table->id();
+        Schema::dropIfExists('test_results');
+        Schema::create('test_results', function (Blueprint $table) {
+            $table->id();
             $table->string('user_name');     // Nombre del participante
-            $table->string('pair_name');     // Nombre de su pareja
-            $table->string('center_name');   // Centro de descubrimiento
+            $table->string('pair_name')->nullable();     // Nombre de su pareja
+            $table->string('center_name')->nullable();   // Centro de descubrimiento
             $table->string('test_type');     // 'mbti' o 'dones'
             $table->timestamp('completed_at');
             $table->json('answers');         // Las respuestas en JSON
+            $table->json('metadata')->nullable(); // Resultados calculados (scores, rankings)
             $table->timestamps();
         });
     }

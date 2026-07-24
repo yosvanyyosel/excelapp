@@ -33,6 +33,11 @@ Route::middleware(['auth'])->group(function () {
     Route::put('/admins/{id}', [AdminController::class, 'updateAdmin'])->name('admins.update');
     Route::delete('/admins/{id}', [AdminController::class, 'deleteAdmin'])->name('admins.delete');
 
-    // PDF
+    // PDF e Impresión
     Route::get('/pdf/pair-cover/{userId}', [AdminController::class, 'generatePairPdf'])->name('pdf.pair');
+    Route::get('/results/{id}/print', [AdminController::class, 'printResult'])->name('results.print');
+
+    // Realizar Tests en Web
+    Route::get('/tests/take/{userId}/{type}', [AdminController::class, 'takeTest'])->name('tests.take');
+    Route::post('/tests/save', [AdminController::class, 'saveTest'])->name('tests.save');
 });
