@@ -12,4 +12,19 @@ class DiscoveryCenter extends Model
     {
         return $this->hasMany(User::class, 'center_id');
     }
+
+    public function staff()
+    {
+        return $this->hasMany(User::class, 'center_id')->where('role', 'admin');
+    }
+
+    public function participants()
+    {
+        return $this->hasMany(User::class, 'center_id')->where('role', 'participant');
+    }
+
+    public function notes()
+    {
+        return $this->hasMany(Note::class, 'center_id');
+    }
 }

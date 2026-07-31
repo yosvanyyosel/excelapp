@@ -20,10 +20,8 @@ class LoginController extends Controller
 
         if (Auth::attempt($credentials)) {
             $request->session()->regenerate();
-            if (Auth::user()->role === 'participant') {
-                Auth::logout();
-                return back()->withErrors(['username' => 'Acceso denegado. Use la aplicación móvil.']);
-            }
+
+            // Allow all roles (master, admin, participant) to login via web
             return redirect()->intended('dashboard');
         }
 
@@ -49,8 +47,7 @@ class LoginController extends Controller
         if (Auth::attempt($credentials)) {
             $user = Auth::user();
             $token = bin2hex(random_bytes(40)); // Simple token for this example
-            // In a real Laravel app, use Sanctum or Passport
-            
+
             return response()->json([
                 'status' => 'success',
                 'user' => [

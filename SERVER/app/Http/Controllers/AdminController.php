@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\DiscoveryCenter;
 use App\Models\User;
 use App\Models\TestResult;
+use App\Models\Note;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -14,18 +15,43 @@ use Illuminate\Support\Facades\Storage;
 class AdminController extends Controller
 {
     public function dashboard() {
+        $user = Auth::user();
+          if ($user->role === 'participant') {
+                return redirect()->route('pairs.show', [$user->center_id, $user->pair_name]);
+            }
+            // Redirección para Mentores
+            if ($user->role === 'admin' && $user->center_id) {
+                return redirect()->route('centers.show', $user->center_id);
+            }
         $centers = DiscoveryCenter::with('users')->get();
-        $admins = User::where('role', 'admin')->get();
+        $admins = User::where('role', 'admin')->whereNull('center_id')->get();
         return view('admin.dashboard', compact('centers', 'admins'));
     }
 
     public function showCenter($id) {
-        $center = DiscoveryCenter::with('users')->findOrFail($id);
+        $user = Auth::user();
+        if ($user->role === 'admin' && $user->center_id && $user->center_id != $id) {
+            abort(403, 'No tienes permiso para acceder a este centro.');
+        }
+
+        $center = DiscoveryCenter::with(['users', 'notes.author', 'notes.taggedUser'])->findOrFail($id);
         $pairs = $center->users->where('role', 'participant')->groupBy('pair_name');
-        return view('admin.center_details', compact('center', 'pairs'));
+        $staff = $center->users->where('role', 'admin');
+
+        $notesQuery = $center->notes()->with('author');
+        if ($user->role !== 'master' && !is_null($user->center_id)) {
+            $notesQuery->where(function($q) use ($user) {
+                $q->where('is_public', true)->orWhere('author_id', $user->id);
+            });
+        }
+        $notes = $notesQuery->orderBy('created_at', 'desc')->get();
+
+        return view('admin.center_details', compact('center', 'pairs', 'staff', 'notes'));
     }
 
     public function showPair($centerId, $pairName) {
+
+        $user = Auth::user();
         $center = DiscoveryCenter::findOrFail($centerId);
         $users = User::where('center_id', $centerId)->where('pair_name', $pairName)->get();
         $husband = $users->first();
@@ -33,6 +59,20 @@ class AdminController extends Controller
 
         $hResults = $this->getEnrichedResults($husband->name, $pairName);
         $wResults = $wife ? $this->getEnrichedResults($wife->name, $pairName) : collect();
+
+        // Fetch notes helper with visibility logic
+        $getVisibleNotes = function($query) use ($user) {
+            if ($user->role !== 'master' && !is_null($user->center_id)) {
+                $query->where(function($q) use ($user) {
+                    $q->where('is_public', true)->orWhere('author_id', $user->id);
+                });
+            }
+            return $query->with('author')->orderBy('created_at', 'desc')->get();
+        };
+
+        $pairNotes = $getVisibleNotes(Note::where('center_id', $centerId)->where('tagged_pair_name', $pairName));
+        $hNotes = $getVisibleNotes(Note::where('center_id', $centerId)->where('tagged_user_id', $husband->id));
+        $wNotes = $wife ? $getVisibleNotes(Note::where('center_id', $centerId)->where('tagged_user_id', $wife->id)) : collect();
 
         $data = [
             'center' => $center,
@@ -44,7 +84,10 @@ class AdminController extends Controller
             'wDones' => $wResults->where('test_type', 'dones')->first(),
             'wMbti' => $wResults->where('test_type', 'mbti')->first(),
             'mbtiInfo' => $this->getMbtiInfo(),
-            'donesInfo' => $this->getDonesInfo()
+            'donesInfo' => $this->getDonesInfo(),
+            'pairNotes' => $pairNotes,
+            'hNotes' => $hNotes,
+            'wNotes' => $wNotes
         ];
 
         return view('admin.pair_details', $data);
@@ -195,7 +238,7 @@ class AdminController extends Controller
             ["number" => 49, "text" => "Reflexiona mucho antes de tomar la palabra en una reunión."],
             ["number" => 50, "text" => "Piensa en voz alta y procesa sus ideas hablando."],
             ["number" => 51, "text" => "Disfruta de la rutina y de saber qué esperar."],
-            ["number" => 52, "text" => "Se aburre fácilmente con la rutina y busca la novedad."],
+            ["number" => 52, "text" => "Se abure fácilmente con la rutina y busca la novedad."],
             ["number" => 53, "text" => "Cree que las reglas deben aplicarse por igual a todo el mundo."],
             ["number" => 54, "text" => "Cree que cada situación es única y las reglas deben ser flexibles."],
             ["number" => 55, "text" => "Prefiere preparar las vacaciones con mucha antelación."],
@@ -228,7 +271,7 @@ class AdminController extends Controller
             ["number" => 5, "text" => "Confío plenamente en que Dios proveerá a pesar de las circunstancias."],
             ["number" => 6, "text" => "Me da alegría dar dinero o recursos a quienes lo necesitan."],
             ["number" => 7, "text" => "Tengo facilidad para entender y sistematizar verdades bíblicas."],
-            ["number" => 8, "text" => "Me siento cómodo liderando y dirigiendo a otros."],
+            ["number" => 8, "text" => "Me siente cómodo liderando y dirigiendo a otros."],
             ["number" => 9, "text" => "Siento profunda compasión por las personas que sufren."],
             ["number" => 10, "text" => "Disfruto guiar y cuidar del crecimiento espiritual de un grupo."],
             ["number" => 11, "text" => "A veces recibo mensajes claros de Dios para compartir con otros."],
@@ -243,15 +286,15 @@ class AdminController extends Controller
             ["number" => 20, "text" => "Trato de administrar mis recursos para poder dar generosamente."],
             ["number" => 21, "text" => "Me gusta profundizar en el estudio de temas complejos."],
             ["number" => 22, "text" => "Tengo visión para el futuro y puedo motivar a otros a seguirla."],
-            ["number" => 23, "text" => "Me siento movido a ayudar a los marginados y necesitados."],
+            ["number" => 23, "text" => "Me siente movido a ayudar a los marginados y necesitados."],
             ["number" => 24, "text" => "Me preocupo por el bienestar de los miembros de mi comunidad."],
-            ["number" => 25, "text" => "Me siento impulsado a denunciar el pecado y llamar al arrepentimiento."],
+            ["number" => 25, "text" => "Me siente impulsado a denunciar el pecado y llamar al arrepentimiento."],
             ["number" => 26, "text" => "Cualquier tarea, por pequeña que sea, me hace feliz si ayuda a otros."],
             ["number" => 27, "text" => "Puedo comunicar conceptos difíciles de manera sencilla."],
             ["number" => 28, "text" => "Dios me da sabiduría para resolver conflictos o problemas."],
             ["number" => 29, "text" => "Sé cómo delegar tareas a las personas adecuadas."],
             ["number" => 30, "text" => "Tengo una intuición espiritual sobre las intenciones de la gente."],
-            ["number" => 31, "text" => "Me siento cómodo hablando con extraños sobre mi fe."],
+            ["number" => 31, "text" => "Me siente cómodo hablando con extraños sobre mi fe."],
             ["number" => 32, "text" => "Sé cómo motivar a alguien que se siente derrotado."],
             ["number" => 33, "text" => "Mi fe me permite mantenerme firme en las pruebas."],
             ["number" => 34, "text" => "Doy con alegría y sin esperar nada a cambio."],
@@ -285,7 +328,7 @@ class AdminController extends Controller
             ["number" => 62, "text" => "Siento que lo que tengo le pertenece a Dios y lo comparto."],
             ["number" => 63, "text" => "Me gusta estudiar el significado original de las palabras bíblicas."],
             ["number" => 64, "text" => "Puedo organizar a un equipo para cumplir una visión."],
-            ["number" => 65, "text" => "Me siento atraído por el ministerio de ayuda social."],
+            ["number" => 65, "text" => "Me siente atraído por el ministerio de ayuda social."],
             ["number" => 66, "text" => "Me gusta caminar junto a las personas en su día a día."],
             ["number" => 67, "text" => "A veces Dios me revela pecados ocultos que deben ser tratados."],
             ["number" => 68, "text" => "Me gusta servir comida o limpiar después de un evento."],
@@ -336,7 +379,7 @@ class AdminController extends Controller
             "ISFP" => ["name" => "El Compositor", "description" => "Artísticos, sensibles y amables. Disfrutan del momento presente y de lo que les rodea. Valoran su propio espacio y trabajar a su propio ritmo.", "strengths" => ["Encantadores", "Sensibles", "Imaginativos", "Apasionados"], "weaknesses" => ["Independientes en exceso", "Impredecibles", "Estresables"]],
             "INFP" => ["name" => "El Sanador", "description" => "Sensibles, idealistas y leales a sus valores. Tienen curiosidad por las posibilidades del futuro y buscan entender a los demás y ayudarlos.", "strengths" => ["Idealistas", "Buscadores de armonía", "Mente abierta", "Creativos"], "weaknesses" => ["Demasiado idealistas", "Demasiado altruistas", "Se lo toman personal"]],
             "INTP" => ["name" => "El Arquitecto", "description" => "Lógicos, precisos y reservados. Valoran la inteligencia y el conocimiento. Son teóricos y abstractos, más interesados en las ideas que sociales.", "strengths" => ["Objetivos", "Imaginativos", "Entusiastas", "Grandes pensadores"], "weaknesses" => ["Desconectados", "Insensibles", "Dudosos"]],
-            "ESTP" => ["name" => "El Promotor", "description" => "Enérgicos y orientados a la acción. Disfrutan de los resultados inmediatos y de resolver problemas de forma pragmática. Son sociables y observadores.", "strengths" => ["Audaces", "Directos", "Sociables", "Perspicaces"], "weaknesses" => ["Insensibles", "Impacientes", "Arriesgados"]],
+            "ESTP" => ["name" => "El Promotor", "description" => "Enérgicos y orientados a la acción. Disfrutan de los resultados inmediatos y de resolver problemas de forma pragática. Son sociables y observadores.", "strengths" => ["Audaces", "Directos", "Sociables", "Perspicaces"], "weaknesses" => ["Insensibles", "Impacientes", "Arriesgados"]],
             "ESFP" => ["name" => "El Actor", "description" => "Amantes de la diversión, sociables y entusiastas. Les gusta trabajar con otros para hacer que las cosas sucedan. Tienen un fuerte sentido común.", "strengths" => ["Audaces", "Originales", "Estéticos", "Prácticos"], "weaknesses" => ["Sensibles", "Evitan conflictos", "Aburrimiento rápido"]],
             "ENFP" => ["name" => "El Campeón", "description" => "Entusiastas, creativos e imaginativos. Ven la vida como algo lleno de posibilidades. Son cálidos y están dispuestos a ayudar a cualquiera.", "strengths" => ["Curiosos", "Observadores", "Enérgicos", "Populares"], "weaknesses" => ["Falta de enfoque", "Pensamiento excesivo", "Muy emocionales"]],
             "ENTP" => ["name" => "El Inventor", "description" => "Rápidos, ingeniosos y estimulantes. Son muy buenos resolviendo problemas nuevos y desafiantes. Valoran la competencia y el pensamiento lógico.", "strengths" => ["Conocedores", "Pensadores rápidos", "Originales", "Carismáticos"], "weaknesses" => ["Argumentativos", "Insensibles", "Intolerantes"]],
@@ -357,7 +400,249 @@ class AdminController extends Controller
     }
 
     public function generatePairPdf($userId) {
-        $user = User::findOrFail($userId);
+        $user = User::with('center')->findOrFail($userId);
         return Pdf::loadView('pdf.pair_cover', compact('user'))->stream("portada_{$user->pair_name}.pdf");
+    }
+
+    public function printCenterPairs($centerId) {
+        $center = DiscoveryCenter::with('users')->findOrFail($centerId);
+        $pairs = $center->users->where('role', 'participant')->groupBy('pair_name');
+
+        $pdf = Pdf::loadView('pdf.center_pairs_grid', compact('center', 'pairs'))
+            ->setPaper('a4', 'portrait');
+
+        return $pdf->stream("parejas_{$center->name}.pdf");
+    }
+
+    public function createCenter(Request $request) {
+        $data = $request->validate([
+            'name' => 'required|string|max:255',
+            'quiz_timer' => 'required|integer|min:1',
+            'banner_photo' => 'nullable|image|max:2048'
+        ]);
+
+        if ($request->hasFile('banner_photo')) {
+            $data['banner_photo'] = $request->file('banner_photo')->store('centers', 'public');
+        }
+
+        DiscoveryCenter::create($data);
+        return back()->with('success', 'Centro creado exitosamente.');
+    }
+
+    public function updateCenter(Request $request, $id) {
+        $center = DiscoveryCenter::findOrFail($id);
+        $data = $request->validate([
+            'name' => 'required|string|max:255',
+            'quiz_timer' => 'required|integer|min:1',
+            'banner_photo' => 'nullable|image|max:2048'
+        ]);
+
+        if ($request->hasFile('banner_photo')) {
+            if ($center->banner_photo) Storage::disk('public')->delete($center->banner_photo);
+            $data['banner_photo'] = $request->file('banner_photo')->store('centers', 'public');
+        }
+
+        $center->update($data);
+        return back()->with('success', 'Centro actualizado.');
+    }
+
+    public function deleteCenter($id) {
+        $center = DiscoveryCenter::findOrFail($id);
+        if ($center->banner_photo) Storage::disk('public')->delete($center->banner_photo);
+        $center->delete();
+        return back()->with('success', 'Centro eliminado.');
+    }
+
+    public function addPair(Request $request) {
+
+
+        if (Auth::user()->center_id && Auth::user()->role !== 'master') {
+            abort(403, 'No tienes permiso para agregar parejas.');
+        }
+
+
+        $request->validate([
+            'pair_name' => 'required',
+            'husband_name' => 'required',
+            'husband_username' => 'required|unique:users,username',
+            'husband_password' => 'required',
+            'wife_name' => 'required',
+            'wife_username' => 'required|unique:users,username',
+            'wife_password' => 'required',
+            'pair_photo' => 'nullable|image'
+        ]);
+
+        $photoPath = null;
+        if ($request->hasFile('pair_photo')) {
+            $photoPath = $request->file('pair_photo')->store('pairs', 'public');
+        }
+
+        User::create([
+            'name' => $request->husband_name,
+            'username' => $request->husband_username,
+            'password' => Hash::make($request->husband_password),
+            'role' => 'participant',
+            'pair_name' => $request->pair_name,
+            'center_id' => $request->center_id,
+            'pair_photo' => $photoPath
+        ]);
+
+        User::create([
+            'name' => $request->wife_name,
+            'username' => $request->wife_username,
+            'password' => Hash::make($request->wife_password),
+            'role' => 'participant',
+            'pair_name' => $request->pair_name,
+            'center_id' => $request->center_id,
+            'pair_photo' => $photoPath
+        ]);
+
+        return redirect()->route('centers.show', $request->center_id . '#tab-pairs')->with('success', 'Pareja registrada.');
+    }
+
+    public function updatePair(Request $request) {
+        $husband = User::findOrFail($request->husband_id);
+        $wife = User::findOrFail($request->wife_id);
+
+        $photoPath = $husband->pair_photo;
+        if ($request->hasFile('pair_photo')) {
+            if ($photoPath) Storage::disk('public')->delete($photoPath);
+            $photoPath = $request->file('pair_photo')->store('pairs', 'public');
+        }
+
+        $husband->update([
+            'name' => $request->husband_name,
+            'username' => $request->husband_username,
+            'pair_name' => $request->pair_name,
+            'pair_photo' => $photoPath
+        ]);
+
+        if ($request->husband_password) {
+            $husband->update(['password' => Hash::make($request->husband_password)]);
+        }
+
+        $wife->update([
+            'name' => $request->wife_name,
+            'username' => $request->wife_username,
+            'pair_name' => $request->pair_name,
+            'pair_photo' => $photoPath
+        ]);
+        if ($request->wife_password) {
+            $wife->update(['password' => Hash::make($request->wife_password)]);
+        }
+
+        return redirect()->route('centers.show', $request->center_id . '#tab-pairs')->with('success', 'Datos de pareja actualizados.');
+    }
+
+    public function addStaff(Request $request) {
+        $request->validate([
+            'name' => 'required',
+            'username' => 'required|unique:users,username',
+            'password' => 'required',
+            'staff_title' => 'required',
+            'center_id' => 'required'
+        ]);
+
+        User::create([
+            'name' => $request->name,
+            'username' => $request->username,
+            'password' => Hash::make($request->password),
+            'role' => 'admin',
+            'staff_title' => $request->staff_title,
+            'center_id' => $request->center_id
+        ]);
+
+        return redirect()->route('centers.show', $request->center_id . '#tab-staff')->with('success', 'Miembro del staff agregado.');
+    }
+
+    public function updateStaff(Request $request, $id) {
+        $staff = User::findOrFail($id);
+        $staff->update([
+            'name' => $request->name,
+            'username' => $request->username,
+            'staff_title' => $request->staff_title,
+        ]);
+        if ($request->password) {
+            $staff->update(['password' => Hash::make($request->password)]);
+        }
+        return redirect()->route('centers.show', $staff->center_id . '#tab-staff')->with('success', 'Staff actualizado.');
+    }
+
+    public function deleteStaff($id) {
+        $staff = User::findOrFail($id);
+        $centerId = $staff->center_id;
+        $staff->delete();
+        return redirect()->route('centers.show', $centerId . '#tab-staff')->with('success', 'Miembro del staff eliminado.');
+    }
+
+    public function addNote(Request $request) {
+        $request->validate([
+            'content' => 'required',
+            'center_id' => 'required'
+        ]);
+
+        Note::create([
+            'author_id' => Auth::id(),
+            'center_id' => $request->center_id,
+            'content' => $request->content,
+            'is_public' => $request->has('is_public'),
+            'tagged_user_id' => $request->tagged_user_id,
+            'tagged_pair_name' => $request->tagged_pair_name
+        ]);
+
+        return redirect()->route('centers.show', $request->center_id . '#tab-notes')->with('success', 'Nota guardada.');
+    }
+
+    public function updateNote(Request $request, $id) {
+        $note = Note::findOrFail($id);
+
+        if (!$this->canManageNote($note)) {
+            return back()->with('error', 'No tienes permiso para editar esta nota.');
+        }
+
+        $note->update([
+            'content' => $request->content,
+            'is_public' => $request->has('is_public'),
+            'tagged_user_id' => $request->tagged_user_id,
+            'tagged_pair_name' => $request->tagged_pair_name
+        ]);
+        return redirect()->route('centers.show', $note->center_id . '#tab-notes')->with('success', 'Nota actualizada.');
+    }
+
+    public function deleteNote($id) {
+        $note = Note::findOrFail($id);
+        $centerId = $note->center_id;
+
+        if (!$this->canManageNote($note)) {
+            return back()->with('error', 'No tienes permiso para eliminar esta nota.');
+        }
+
+        $note->delete();
+        return redirect()->route('centers.show', $centerId . '#tab-notes')->with('success', 'Nota eliminada.');
+    }
+
+    private function canManageNote($note) {
+        $user = Auth::user();
+        if ($note->author_id == $user->id) return true;
+        if ($user->role == 'master') return true;
+        if ($user->role == 'admin' && is_null($user->center_id)) return true;
+        return false;
+    }
+
+    public function updateAdmin(Request $request, $id) {
+        $admin = User::findOrFail($id);
+        $admin->update([
+            'name' => $request->name,
+            'username' => $request->username,
+        ]);
+        if ($request->password) {
+            $admin->update(['password' => Hash::make($request->password)]);
+        }
+        return back()->with('success', 'Administrador actualizado.');
+    }
+
+    public function deleteAdmin($id) {
+        User::findOrFail($id)->delete();
+        return back()->with('success', 'Administrador eliminado.');
     }
 }

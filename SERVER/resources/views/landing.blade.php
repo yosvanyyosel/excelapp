@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Centro de Descubrimiento - Gestión</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
     <style>
         body { background: #f8f9fa; }
         .hero { background: linear-gradient(135deg, #1e3a8a, #3b82f6); color: white; padding: 100px 0; }
@@ -34,6 +34,13 @@
                             <label class="form-label">Contraseña</label>
                             <input type="password" name="password" class="form-control" required>
                         </div>
+
+                @if(session('success'))
+                    <div class="alert alert-success border-0 shadow-sm rounded-4 mb-4" role="alert">
+                        <i class="bi bi-check-circle-fill me-2"></i> {{ session('success') }}
+                    </div>
+                @endif
+
                         <button type="submit" class="btn btn-primary w-100 py-2">Ingresar al Panel</button>
                     </form>
                 </div>

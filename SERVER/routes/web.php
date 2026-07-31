@@ -26,8 +26,18 @@ Route::middleware(['auth'])->group(function () {
 
     // Gestión de Parejas
     Route::post('/pairs', [AdminController::class, 'addPair'])->name('pairs.add');
-    Route::post('/pairs/update', [AdminController::class, 'updatePair'])->name('pairs.update');
-    Route::post('/pairs/delete', [AdminController::class, 'deletePair'])->name('pairs.delete');
+    Route::put('/pairs/update', [AdminController::class, 'updatePair'])->name('pairs.update');
+    Route::delete('/pairs/delete', [AdminController::class, 'deletePair'])->name('pairs.delete');
+
+    // Gestión de Staff
+    Route::post('/staff', [AdminController::class, 'addStaff'])->name('staff.add');
+    Route::put('/staff/{id}', [AdminController::class, 'updateStaff'])->name('staff.update');
+    Route::delete('/staff/{id}', [AdminController::class, 'deleteStaff'])->name('staff.delete');
+
+    // Gestión de Notas
+    Route::post('/notes', [AdminController::class, 'addNote'])->name('notes.add');
+    Route::put('/notes/{id}', [AdminController::class, 'updateNote'])->name('notes.update');
+    Route::delete('/notes/{id}', [AdminController::class, 'deleteNote'])->name('notes.delete');
 
     // Gestión de Admins
     Route::put('/admins/{id}', [AdminController::class, 'updateAdmin'])->name('admins.update');
@@ -36,6 +46,7 @@ Route::middleware(['auth'])->group(function () {
     // PDF e Impresión
     Route::get('/pdf/pair-cover/{userId}', [AdminController::class, 'generatePairPdf'])->name('pdf.pair');
     Route::get('/results/{id}/print', [AdminController::class, 'printResult'])->name('results.print');
+    Route::get('/centers/{id}/print-pairs', [AdminController::class, 'printCenterPairs'])->name('centers.print_pairs');
 
     // Realizar Tests en Web
     Route::get('/tests/take/{userId}/{type}', [AdminController::class, 'takeTest'])->name('tests.take');
