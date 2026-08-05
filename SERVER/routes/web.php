@@ -29,6 +29,12 @@ Route::middleware(['auth'])->group(function () {
     Route::put('/pairs/update', [AdminController::class, 'updatePair'])->name('pairs.update');
     Route::delete('/pairs/delete', [AdminController::class, 'deletePair'])->name('pairs.delete');
 
+    // Evaluación Final y Recomendaciones
+    Route::post('/evaluation-items', [AdminController::class, 'addEvaluationItem'])->name('evaluation.add');
+    Route::put('/evaluation-items/{id}', [AdminController::class, 'updateEvaluationItem'])->name('evaluation.update');
+    Route::delete('/evaluation-items/{id}', [AdminController::class, 'deleteEvaluationItem'])->name('evaluation.delete');
+    Route::post('/pair-evaluation/decision', [AdminController::class, 'setPairDecision'])->name('pair_evaluation.decision');
+
     // Gestión de Staff
     Route::post('/staff', [AdminController::class, 'addStaff'])->name('staff.add');
     Route::put('/staff/{id}', [AdminController::class, 'updateStaff'])->name('staff.update');

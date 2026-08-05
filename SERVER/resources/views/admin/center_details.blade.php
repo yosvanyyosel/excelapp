@@ -6,6 +6,8 @@
     <title>{{ $center->name }} - Gestión</title>
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
 
     <style>
         :root {
@@ -96,7 +98,7 @@
             box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
         }
 
-        .form-control {
+        .form-control, .form-select {
             border-radius: 12px;
             padding: 0.6rem 1rem;
             border: 1px solid #e2e8f0;
@@ -146,6 +148,17 @@
             color: white;
             border-color: var(--primary);
         }
+
+        .decision-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 6px;
+        }
+        .bg-decision-green { background-color: #22c55e; }
+        .bg-decision-yellow { background-color: #eab308; }
+        .bg-decision-red { background-color: #ef4444; }
 
         @media (max-width: 992px) {
             .sidebar { width: 100%; height: auto; position: relative; }
@@ -268,6 +281,7 @@
                                                 <tr>
                                                     <th class="ps-4">Pareja</th>
                                                     <th>Integrantes</th>
+                                                    <th>Estado</th>
                                                     <th class="text-end pe-4">Acciones</th>
                                                 </tr>
                                             </thead>
@@ -276,6 +290,7 @@
                                                 @php
                                                     $h = $users->first();
                                                     $w = $users->count() > 1 ? $users->last() : null;
+                                                    $eval = $center->pairEvaluations->where('pair_name', $pairName)->first();
                                                 @endphp
                                                 <tr>
                                                     <td class="ps-4">
@@ -291,6 +306,16 @@
                                                         </div>
                                                     </td>
                                                     <td class="small">{{ $users->pluck('name')->join(' & ') }}</td>
+                                                    <td>
+                                                        @if($eval)
+                                                            <span class="small fw-700">
+                                                                <span class="decision-dot bg-decision-{{ $eval->decision }}"></span>
+                                                                {{ $eval->decision_text }}
+                                                            </span>
+                                                        @else
+                                                            <span class="text-muted small">Pendiente</span>
+                                                        @endif
+                                                    </td>
                                                     <td class="text-end pe-4">
                                                         <a href="{{ route('pairs.show', [$center->id, $pairName]) }}" class="action-btn-small" title="Ver Detalles"><i class="bi bi-eye"></i></a>
                                                         @if(Auth::user()->role === 'master' || (Auth::user()->role === 'admin' && is_null(Auth::user()->center_id)))

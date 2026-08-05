@@ -27,4 +27,9 @@ class DiscoveryCenter extends Model
     {
         return $this->hasMany(Note::class, 'center_id');
     }
+
+    public function pairEvaluations()
+    {
+        return $this->hasMany(PairEvaluation::class, 'center_id');
+    }
 }

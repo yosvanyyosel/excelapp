@@ -40,4 +40,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(Note::class, 'tagged_user_id');
     }
+
+    public function evaluationItems()
+    {
+        return $this->hasMany(EvaluationItem::class);
+    }
 }

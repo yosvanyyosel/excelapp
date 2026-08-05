@@ -166,27 +166,6 @@
             .sidebar { position: relative; width: 100%; min-height: auto; }
         }
     </style>
-    <style>
-        :root { --primary: #6366f1; --dark: #0f172a; --bg-body: #f8fafc; --sidebar-bg: #1e293b; }
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: var(--bg-body); color: var(--dark); }
-        .sidebar { min-height: 100vh; background: var(--sidebar-bg); position: fixed; width: 16.666667%; z-index: 100; }
-        .sidebar .nav-link { color: #94a3b8; font-weight: 500; padding: 0.8rem 1rem; border-radius: 8px; }
-        .sidebar .nav-link.active { background: var(--primary); color: white; }
-        .main-content { margin-left: 16.666667%; padding: 2rem; }
-        .card-premium { border: none; border-radius: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.03); background: white; overflow: hidden; margin-bottom: 2rem; }
-        .nav-main { background: #f1f5f9; padding: 0.5rem; border-radius: 16px; margin-bottom: 2.5rem; border: none; }
-        .nav-main .nav-link { border-radius: 12px; font-weight: 700; padding: 12px 24px; color: #64748b; border: none; }
-        .nav-main .nav-link.active { background-color: var(--primary); color: white; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3); }
-        .mbti-type-title { font-size: 3rem; font-weight: 800; color: var(--primary); }
-        .tag-strength { background: #ecfdf5; color: #059669; padding: 4px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; margin: 2px; display: inline-block; }
-        .tag-weakness { background: #fef2f2; color: #dc2626; padding: 4px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; margin: 2px; display: inline-block; }
-        .evaluation-item { border-bottom: 1px solid #f1f5f9; padding: 10px 0; display: flex; justify-content: space-between; align-items: center; }
-        .decision-badge { padding: 10px 20px; border-radius: 50px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }
-        .decision-green { background: #dcfce7; color: #166534; border: 2px solid #22c55e; }
-        .decision-yellow { background: #fef9c3; color: #854d0e; border: 2px solid #eab308; }
-        .decision-red { background: #fee2e2; color: #991b1b; border: 2px solid #ef4444; }
-        .note-card { border-left: 4px solid var(--primary); background: #f8fafc; padding: 1.25rem; border-radius: 12px; margin-bottom: 1rem; }
-    </style>
 </head>
 <body>
     <div class="container-fluid">
@@ -220,28 +199,11 @@
                         <p class="text-muted mb-0">{{ $pairName }} en {{ $center->name }}</p>
                     </div>
                     @if(Auth::user()->role !== 'participant')
-                        <div class="d-flex gap-2">
-                            <button type="button" class="btn btn-dark rounded-pill px-4 fw-700 shadow-sm" data-bs-toggle="modal" data-bs-target="#modalDecision">
-                                <i class="bi bi-flag-fill me-2"></i> Decisión Final
-                            </button>
-                            <a href="{{ route('pdf.pair', $husband->id) }}" target="_blank" class="btn btn-danger rounded-pill px-4 fw-700 shadow-sm">
-                                <i class="bi bi-file-earmark-pdf-fill me-2"></i> Reporte Completo
-                            </a>
-                        </div>
+                        <a href="{{ route('pdf.pair', $husband->id) }}" target="_blank" class="btn btn-danger rounded-pill px-4 fw-700 shadow-sm">
+                            <i class="bi bi-file-earmark-pdf-fill me-2"></i> Generar Portada
+                        </a>
                     @endif
                 </div>
-
-                @if($pairEvaluation && $showDecision)
-                    <div class="card-premium p-4 mb-4 text-center border-start border-5 @if($pairEvaluation->decision == 'green') border-success @elseif($pairEvaluation->decision == 'yellow') border-warning @else border-danger @endif">
-                        <h6 class="text-muted small fw-800 mb-3">RECOMENDACIÓN FINAL DEL CENTRO</h6>
-                        <span class="decision-badge @if($pairEvaluation->decision == 'green') decision-green @elseif($pairEvaluation->decision == 'yellow') decision-yellow @else decision-red @endif">
-                            {{ $pairEvaluation->decision_text }}
-                        </span>
-                        @if($pairEvaluation->visible_at)
-                            <p class="mt-3 small text-muted">Programado para: {{ $pairEvaluation->visible_at->format('d/m/Y H:i') }}</p>
-                        @endif
-                    </div>
-                @endif
 
                 <div class="row">
                     <div class="col-lg-3">
@@ -291,46 +253,7 @@
                                     <div class="tab-content">
                                         <!-- RESUMEN -->
                                         <div class="tab-pane fade show active" id="{{ $data['id'] }}-resumen">
-                                            
-                                        <div class="card-premium p-4 mb-4">
-                                        <div class="d-flex justify-content-between align-items-center mb-4">
-                                            <h5 class="fw-800 mb-0">Evaluación de Desempeño</h5>
-                                            @if(Auth::user()->role !== 'participant')
-                                                <button class="btn btn-primary btn-sm rounded-pill px-3" onclick="openEvalModal({{ $data['u']->id }}, '{{ $data['u']->name }}')">
-                                                    <i class="bi bi-plus-lg me-1"></i> Agregar Item
-                                                </button>
-                                            @endif
-                                        </div>
-                                        <div class="row">
-                                            @foreach(['strength' => 'Fortalezas', 'growth' => 'Áreas de Crecimiento', 'suggestion' => 'Sugerencias'] as $type => $label)
-                                                <div class="col-md-4">
-                                                    <h6 class="small fw-800 text-muted border-bottom pb-2 mb-3">{{ strtoupper($label) }}</h6>
-                                                    @forelse($data['u']->evaluationItems->where('type', $type) as $item)
-                                                        <div class="evaluation-item">
-                                                            <span class="small">{{ $item->content }}</span>
-                                                            @if(Auth::user()->role !== 'participant')
-                                                                <div class="dropdown">
-                                                                    <button class="btn btn-link btn-sm text-muted" data-bs-toggle="dropdown"><i class="bi bi-three-dots-vertical"></i></button>
-                                                                    <ul class="dropdown-menu shadow border-0">
-                                                                        <li><a class="dropdown-item small" href="#" onclick="editEval({{ $item->id }}, '{{ addslashes($item->content) }}', '{{ $item->type }}', '{{ $data['u']->name }}')">Editar</a></li>
-                                                                        <li>
-                                                                            <form action="{{ route('evaluation.delete', $item->id) }}" method="POST">
-                                                                                @csrf @method('DELETE')
-                                                                                <button class="dropdown-item small text-danger">Eliminar</button>
-                                                                            </form>
-                                                                        </li>
-                                                                    </ul>
-                                                                </div>
-                                                            @endif
-                                                        </div>
-                                                    @empty
-                                                        <p class="text-muted small italic">Pendiente...</p>
-                                                    @endforelse
-                                                </div>
-                                            @endforeach
-                                        </div>
-                                    </div>
-                                        <div class="card-premium p-4">
+                                            <div class="card-premium p-4">
                                                 <div class="row g-4">
                                                     <div class="col-md-7 border-end">
                                                         <h6 class="fw-800 text-muted small mb-4">PERSONALIDAD (MBTI)</h6>
@@ -538,94 +461,6 @@
             </main>
         </div>
     </div>
-    <!-- Modals -->
-    <div class="modal fade" id="modalEval" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content rounded-4 border-0">
-                <form id="formEval" action="{{ route('evaluation.add') }}" method="POST">
-                    @csrf
-                    <input type="hidden" name="_method" id="eval_method" value="POST">
-                    <input type="hidden" name="user_id" id="eval_user_id">
-                    <div class="modal-header border-0 p-4 pb-0">
-                        <h5 class="fw-800" id="evalModalTitle">Evaluación para <span id="eval_user_name"></span></h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body p-4">
-                        <div class="mb-3">
-                            <label class="form-label small fw-700">Tipo</label>
-                            <select name="type" id="eval_type" class="form-select rounded-3">
-                                <option value="strength">Fortaleza</option>
-                                <option value="growth">Área de Crecimiento</option>
-                                <option value="suggestion">Sugerencia</option>
-                            </select>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label small fw-700">Contenido</label>
-                            <textarea name="content" id="eval_content" class="form-control rounded-3" rows="3" required></textarea>
-                        </div>
-                    </div>
-                    <div class="modal-footer border-0 p-4 pt-0">
-                        <button class="btn btn-primary w-100 rounded-pill fw-700" id="evalSubmitBtn">Guardar Item</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-
-    <div class="modal fade" id="modalDecision" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content rounded-4 border-0">
-                <form action="{{ route('pair_evaluation.decision') }}" method="POST">
-                    @csrf
-                    <input type="hidden" name="center_id" value="{{ $center->id }}">
-                    <input type="hidden" name="pair_name" value="{{ $pairName }}">
-                    <div class="modal-header border-0 p-4 pb-0"><h5 class="fw-800">Decisión Final</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
-                    <div class="modal-body p-4">
-                        <div class="mb-3">
-                            <label class="form-label small fw-700">Estado</label>
-                            <select name="decision" class="form-select rounded-3">
-                                <option value="green" {{ ($pairEvaluation->decision ?? '') == 'green' ? 'selected' : '' }}>Luz Verde (Recomendado)</option>
-                                <option value="yellow" {{ ($pairEvaluation->decision ?? '') == 'yellow' ? 'selected' : '' }}>Luz Amarilla (Recomendado con reservas)</option>
-                                <option value="red" {{ ($pairEvaluation->decision ?? '') == 'red' ? 'selected' : '' }}>Luz Roja (No Recomendado)</option>
-                            </select>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label small fw-700">Texto de la Decisión</label>
-                            <input type="text" name="decision_text" class="form-control rounded-3" value="{{ $pairEvaluation->decision_text ?? 'Recomendado' }}">
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label small fw-700">Visible para la Pareja el:</label>
-                            <input type="datetime-local" name="visible_at" class="form-control rounded-3" value="{{ $pairEvaluation && $pairEvaluation->visible_at ? $pairEvaluation->visible_at->format('Y-m-d\TH:i') : '' }}">
-                        </div>
-                    </div>
-                    <div class="modal-footer border-0 p-4 pt-0"><button class="btn btn-primary w-100 rounded-pill fw-700">Actualizar Decisión</button></div>
-                </form>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        function openEvalModal(id, name) {
-            document.getElementById('formEval').action = "{{ route('evaluation.add') }}";
-            document.getElementById('eval_method').value = "POST";
-            document.getElementById('eval_user_id').value = id;
-            document.getElementById('eval_user_name').innerText = name;
-            document.getElementById('eval_content').value = "";
-            document.getElementById('evalModalTitle').innerText = "Nueva Evaluación para " + name;
-            document.getElementById('evalSubmitBtn').innerText = "Guardar Item";
-            new bootstrap.Modal(document.getElementById('modalEval')).show();
-        }
-
-        function editEval(id, content, type, userName) {
-            document.getElementById('formEval').action = "/evaluation-items/" + id;
-            document.getElementById('eval_method').value = "PUT";
-            document.getElementById('eval_type').value = type;
-            document.getElementById('eval_content').value = content;
-            document.getElementById('eval_user_name').innerText = userName;
-            document.getElementById('evalModalTitle').innerText = "Editar Item de " + userName;
-            document.getElementById('evalSubmitBtn').innerText = "Actualizar Item";
-            new bootstrap.Modal(document.getElementById('modalEval')).show();
-        }
-    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
