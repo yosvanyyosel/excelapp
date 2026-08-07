@@ -375,7 +375,7 @@ class AdminController extends Controller
             ["number" => 50, "text" => "Asumo el mando cuando veo que falta liderazgo."],
             ["number" => 51, "text" => "Me duele ver el sufrimiento ajeno y busco aliviarlo."],
             ["number" => 52, "text" => "Disfruto discipular a otros uno a uno."],
-            ["number" => 53, "text" => "Me siento llamado a ser una voz de advertencia para la iglesia."],
+            ["number" => 53, "text" => "Me siente llamado a ser una voz de advertencia para la iglesia."],
             ["number" => 54, "text" => "Prefiero hacer el trabajo práctico que dirigirlo."],
             ["number" => 55, "text" => "Me encanta ver cómo la gente aprende y aplica la verdad."],
             ["number" => 56, "text" => "Tengo una visión clara de cómo aplicar principios bíblicos hoy."],
@@ -456,7 +456,13 @@ class AdminController extends Controller
     }
 
     public function createCenter(Request $request) {
-        $data = $request->validate(['name' => 'required', 'quiz_timer' => 'required', 'banner_photo' => 'nullable|image']);
+        $data = $request->validate([
+            'name' => 'required',
+            'location' => 'nullable|string',
+            'event_date' => 'nullable|string',
+            'quiz_timer' => 'required',
+            'banner_photo' => 'nullable|image'
+        ]);
         if ($request->hasFile('banner_photo')) { $data['banner_photo'] = $request->file('banner_photo')->store('centers', 'public'); }
         DiscoveryCenter::create($data);
         return back()->with('success', 'Centro creado.');
@@ -464,7 +470,13 @@ class AdminController extends Controller
 
     public function updateCenter(Request $request, $id) {
         $center = DiscoveryCenter::findOrFail($id);
-        $data = $request->validate(['name' => 'required', 'quiz_timer' => 'required', 'banner_photo' => 'nullable|image']);
+        $data = $request->validate([
+            'name' => 'required',
+            'location' => 'nullable|string',
+            'event_date' => 'nullable|string',
+            'quiz_timer' => 'required',
+            'banner_photo' => 'nullable|image'
+        ]);
         if ($request->hasFile('banner_photo')) {
             if ($center->banner_photo) Storage::disk('public')->delete($center->banner_photo);
             $data['banner_photo'] = $request->file('banner_photo')->store('centers', 'public');

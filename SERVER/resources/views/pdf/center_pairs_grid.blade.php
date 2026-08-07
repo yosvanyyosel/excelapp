@@ -2,60 +2,68 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Gafetes/Tarjetas - {{ $center->name }}</title>
+    <title>Galería de Parejas - {{ $center->name }}</title>
     <style>
         @page {
-            margin: 0;
+            margin: 10mm;
         }
         body {
             font-family: 'Helvetica', sans-serif;
             margin: 0;
             padding: 0;
+            background-color: #fff;
+            color: #1a1a1a;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #22c55e;
+            padding-bottom: 10px;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 22px;
+            color: #000;
+        }
+        .header p {
+            margin: 5px 0 0;
+            font-size: 14px;
+            color: #666;
         }
         .page-break {
             page-break-after: always;
         }
-        .container {
-            width: 210mm;
-            height: 297mm;
-            padding: 10mm;
-            box-sizing: border-box;
-        }
         .grid {
             width: 100%;
-            height: 100%;
         }
         .item {
-            width: 48%;
-            height: 31%;
+            width: 31%;
             float: left;
             margin: 1%;
-            border: 1px dashed #ccc;
             box-sizing: border-box;
             text-align: center;
-            padding: 10px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
+            padding: 5px;
+            margin-bottom: 20px;
         }
-        .photo-box {
+        .photo-container {
             width: 100%;
-            height: 70%;
-            margin-bottom: 10px;
+            height: 160px;
+            background-color: #f3f4f6;
+            border-radius: 12px;
             overflow: hidden;
-            display: block;
+            border: 1px solid #e5e7eb;
+            margin-bottom: 8px;
         }
         .photo {
-            max-width: 100%;
-            max-height: 100%;
-            border-radius: 10px;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
         }
         .name {
-            font-size: 18px;
+            font-size: 14px;
             font-weight: bold;
-            color: #1e3a8a;
-            text-transform: uppercase;
+            color: #000;
+            word-wrap: break-word;
         }
         .clear {
             clear: both;
@@ -63,27 +71,32 @@
     </style>
 </head>
 <body>
-    @foreach($pairs->chunk(6) as $chunk)
-        <div class="container {{ !$loop->last ? 'page-break' : '' }}">
-            <div class="grid">
-                @foreach($chunk as $pairName => $users)
-                    @php
-                        $husband = $users->first();
-                        $photoPath = $husband->pair_photo ? public_path('storage/' . $husband->pair_photo) : null;
-                    @endphp
-                    <div class="item">
-                        <div class="photo-box">
-                            @if($photoPath && file_exists($photoPath))
-                                <img src="{{ $photoPath }}" class="photo">
-                            @else
-                                <div style="width: 100%; height: 100%; background: #f3f4f6; border-radius: 10px; border: 1px solid #e5e7eb;"></div>
-                            @endif
-                        </div>
-                        <div class="name">{{ $pairName }}</div>
+    <div class="header">
+        <h1>{{ $center->name }}</h1>
+        <p>Galería de Participantes - Total: {{ $pairs->count() }} parejas</p>
+    </div>
+
+    @foreach($pairs->chunk(9) as $chunk)
+        <div class="grid {{ !$loop->last ? 'page-break' : '' }}">
+            @foreach($chunk as $pairName => $users)
+                @php
+                    $husband = $users->first();
+                    $photoPath = $husband->pair_photo ? public_path('storage/' . $husband->pair_photo) : null;
+                @endphp
+                <div class="item">
+                    <div class="photo-container">
+                        @if($photoPath && file_exists($photoPath))
+                            <img src="{{ $photoPath }}" class="photo">
+                        @else
+                            <div style="padding-top: 60px; color: #9ca3af; font-size: 10px;">
+                                <small>SIN FOTO</small>
+                            </div>
+                        @endif
                     </div>
-                @endforeach
-                <div class="clear"></div>
-            </div>
+                    <div class="name">{{ $pairName }}</div>
+                </div>
+            @endforeach
+            <div class="clear"></div>
         </div>
     @endforeach
 </body>

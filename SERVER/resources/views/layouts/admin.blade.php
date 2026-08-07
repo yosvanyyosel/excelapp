@@ -6,8 +6,8 @@
     <title>@yield('title', 'Discovery Admin')</title>
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
 
     <style>
         :root {
@@ -206,8 +206,8 @@
         <!-- Sidebar -->
         <nav id="sidebar">
             <div class="sidebar-brand">
-                <i class="bi bi-hexagon-fill text-primary fs-3 me-2"></i>
-                <span class="text-white fw-800 fs-4">DISCOVERY</span>
+                <img src="/logoexcel.png" style="width: 40px; height: 40px" class="fs-3 me-2"/>
+                <img src="/logotipo.webp"  style="width: 140px; height: 40px" class="fw-800 fs-4"/>
             </div>
 
             <div class="mt-2">
@@ -236,9 +236,9 @@
                 </div>
 
                 <div class="d-flex align-items-center gap-3">
-                    <button id="darkModeToggle" class="btn btn-light rounded-circle p-2" style="width: 40px; height: 40px;">
+                    <!---<button id="darkModeToggle" class="btn btn-light rounded-circle p-2" style="width: 40px; height: 40px;">
                         <i class="bi bi-moon-fill" id="themeIcon"></i>
-                    </button>
+                    </button>--->
 
                     <div class="dropdown">
                         <div class="d-flex align-items-center gap-2 cursor-pointer" data-bs-toggle="dropdown">

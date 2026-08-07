@@ -2,107 +2,285 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Reporte de Resultados - {{ $result->user_name }}</title>
+    <title>Resultado de {{ $result->test_type == 'mbti' ? 'Personalidad MBTI' : 'Dones'}} - {{ $result->user_name }}</title>
     <style>
-        @page { margin: 1.5cm; }
-        body { font-family: 'Helvetica', 'Arial', sans-serif; color: #1e293b; line-height: 1.4; font-size: 11px; }
-        .header { text-align: center; border-bottom: 3px solid #4f46e5; padding-bottom: 15px; margin-bottom: 25px; }
-        .title { font-size: 24px; font-weight: bold; color: #1e1b4b; margin-bottom: 5px; text-transform: uppercase; }
-        .subtitle { font-size: 12px; color: #64748b; }
+        @page {
+            margin: 1.5cm;
+        }
+        body {
+            font-family: 'Helvetica', 'Arial', sans-serif;
+            color: #1a1a1a;
+            line-height: 1.4;
+            font-size: 10px;
+            margin: 0;
+            padding: 0;
+        }
 
-        .section-title { font-size: 14px; font-weight: bold; color: #1e1b4b; margin: 25px 0 12px 0; border-left: 4px solid #4f46e5; padding-left: 10px; background: #f8fafc; padding-top: 5px; padding-bottom: 5px; }
+        .footer {
+            position: fixed;
+            bottom: -1cm;
+            left: 0;
+            right: 0;
+            height: 30px;
+            text-align: center;
+            font-size: 9px;
+            color: #777;
+            border-top: 1px solid #eee;
+            padding-top: 5px;
+        }
 
-        /* MBTI Styles */
-        .mbti-hero { background: #f1f5f9; border-radius: 12px; padding: 20px; text-align: center; margin-bottom: 20px; border: 1px solid #e2e8f0; }
-        .mbti-type { font-size: 38px; font-weight: bold; color: #4f46e5; letter-spacing: 6px; margin: 5px 0; }
-        .mbti-name { font-size: 18px; font-weight: bold; color: #334155; margin-bottom: 10px; }
+        .header-box {
+            text-align: center;
+            border-bottom: 2px solid #22c55e;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        .brand {
+            color: #22c55e;
+            font-weight: 800;
+            font-size: 16px;
+            margin-bottom: 2px;
+        }
+        .title {
+            font-size: 20px;
+            font-weight: bold;
+            color: #000;
+            text-transform: uppercase;
+        }
 
-        .dim-row { margin-bottom: 12px; }
-        .dim-text { overflow: hidden; margin-bottom: 4px; font-size: 10px; font-weight: bold; }
-        .progress-bg { height: 10px; background: #e2e8f0; border-radius: 5px; position: relative; }
-        .progress-fill { height: 100%; background: #4f46e5; border-radius: 5px; }
+        .section-title {
+            font-size: 12px;
+            font-weight: bold;
+            color: #000;
+            margin: 15px 0 8px 0;
+            border-left: 4px solid #22c55e;
+            padding-left: 8px;
+            background: #f9fafb;
+        }
 
-        .detail-box { border: 1px solid #e2e8f0; border-radius: 10px; padding: 15px; margin-bottom: 15px; }
-        .tag { display: inline-block; padding: 3px 8px; border-radius: 5px; font-size: 9px; margin-right: 5px; margin-bottom: 5px; font-weight: bold; }
-        .tag-s { background: #ecfdf5; color: #065f46; }
-        .tag-w { background: #fef2f2; color: #991b1b; }
+        .page-break {
+            page-break-after: always;
+        }
 
-        /* Dones Styles */
-        .table-dones { width: 100%; border-collapse: collapse; text-align: center; margin-bottom: 25px; }
-        .table-dones td { border: 1px solid #e2e8f0; padding: 4px; font-size: 9px; }
-        .header-cell { background: #f8fafc; color: #94a3b8; font-size: 7px; }
-        .total-cell { background: #eef2ff; color: #4f46e5; font-weight: bold; font-size: 11px; }
-        .code-cell { background: #f1f5f9; font-weight: bold; color: #475569; }
+        /* MBTI Visual Styles - Exact Match to Image */
+        .mbti-container {
+            padding: 10px 0;
+        }
+        .mbti-row {
+            margin-bottom: 25px;
+            width: 100%;
+        }
+        .mbti-labels {
+            width: 100%;
+            height: 16px;
+            font-size: 11px;
+            font-weight: 500;
+            text-transform: uppercase;
+            margin-bottom: 6px;
+        }
+        .label-left {
+            float: left;
+            width: 50%;
+            text-align: left;
+        }
+        .label-right {
+            float: right;
+            width: 50%;
+            text-align: right;
+        }
+        .mbti-bar-bg {
+            height: 12px;
+            background: #f3f4f6;
+            border-radius: 6px;
+            width: 100%;
+            position: relative;
+            clear: both;
+        }
+        .mbti-bar-fill {
+            height: 100%;
+            background: #22c55e;
+            border-radius: 6px;
+            position: absolute;
+            top: 0;
+        }
 
-        .rank-item { padding: 10px 15px; border-bottom: 1px solid #f1f5f9; clear: both; }
-        .rank-num { float: left; width: 25px; height: 25px; background: #4f46e5; color: white; border-radius: 50%; text-align: center; line-height: 25px; font-weight: bold; margin-right: 15px; }
-        .rank-label { font-weight: bold; font-size: 12px; color: #1e293b; }
-        .rank-pts { float: right; font-weight: bold; color: #4f46e5; background: #f5f3ff; padding: 3px 10px; border-radius: 15px; }
+        /* Dones Visual Styles - Exact Match to Image */
+        .dones-container {
+            width: 100%;
+            margin-top: 10px;
+        }
+        .dones-card {
+            width: 82mm;
+            display: inline-block;
+            margin: 0.5%;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 10px 12px;
+            background: #fff;
+            box-sizing: border-box;
+            vertical-align: top;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+        .dones-name {
+            font-size: 11px;
+            color: #334155;
+            font-weight: 500;
+            width: 75%;
+            display: inline-block;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            vertical-align: middle;
+        }
+        .dones-badge {
+            float: right;
+            background: #007bff;
+            color: #ffffff;
+            font-size: 10px;
+            font-weight: bold;
+            padding: 2px 0;
+            border-radius: 6px;
+            width: 22px;
+            text-align: center;
+            vertical-align: middle;
+            margin-top: -1px;
+        }
 
-        .footer { position: fixed; bottom: 0; width: 100%; text-align: center; font-size: 9px; color: #94a3b8; border-top: 1px solid #e2e8f0; padding-top: 10px; }
+        /* Technical Table */
+        .tech-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 25px;
+            font-size: 8px;
+        }
+        .tech-table td {
+            border: 1px solid #ddd;
+            padding: 4px;
+            text-align: center;
+        }
+        .cell-num { background: #f9fafb; color: #999; font-size: 7px; }
+        .cell-total { background: #f0fdf4; font-weight: bold; color: #22c55e; font-size: 10px; }
+        .cell-code { font-weight: bold; background: #f9fafb; }
+
+        .tag { display: inline-block; padding: 3px 8px; border-radius: 5px; font-size: 8.5px; margin: 1px; font-weight: bold; }
+        .tag-green { background: #dcfce7; color: #166534; }
+        .tag-red { background: #fee2e2; color: #991b1b; }
     </style>
 </head>
 <body>
-    <div class="header">
-        <div class="title">{{ $result->test_type == 'mbti' ? 'Resultados de Personalidad' : 'Resultados de Dones' }}</div>
-        <div class="subtitle">
-            <strong>Participante:</strong> {{ $result->user_name }} &nbsp;&nbsp;|&nbsp;&nbsp;
-            <strong>Centro:</strong> {{ $result->center_name ?? 'N/A' }} &nbsp;&nbsp;|&nbsp;&nbsp;
-            <strong>Fecha:</strong> {{ $result->completed_at->format('d/m/Y H:i') }}
-        </div>
+    <script type="text/php">
+        if (isset($pdf)) {
+            $text = "Página {PAGE_NUM} de {PAGE_COUNT}";
+            $font = $fontMetrics->get_font("helvetica", "normal");
+            $size = 8;
+            $color = array(0.5, 0.5, 0.5);
+            $pdf->page_text(270, 760, $text, $font, $size, $color);
+        }
+    </script>
+
+    <div class="footer">
+        {{ $result->center_name ?? 'EXCEL' }} - Resultados del Test
     </div>
 
-    @if($result->test_type == 'mbti' && isset($result->metadata['scores']))
+    @if($result->test_type == 'mbti')
         @foreach($result->metadata['mbti_types'] ?? [] as $type)
-            <div class="mbti-hero">
-                <div style="font-size: 10px; color: #64748b; text-transform: uppercase;">Perfil Identificado</div>
-                <div class="mbti-type">{{ $type }}</div>
-                <div class="mbti-name">{{ $mbtiInfo[$type]['name'] ?? '' }}</div>
-            </div>
+            <div class="page-break">
+                <div class="header-box">
+                    <div class="brand">
+                    <img src="./logoexcel.png"  style="width: 40px; height: 40px" class="fw-800 fs-4"/>
+                </div>
+                    <div class="title">Resultados de Personalidad</div>
+                </div>
 
-            <div class="section-title">Análisis de Dimensiones</div>
-            @foreach([['E','I','Extroversión','Introversión'], ['S','N','Sensación','Intuición'], ['T','F','Pensamiento','Sentimiento'], ['J','P','Juicio','Percepción']] as $dim)
-                @php
-                    $v1 = $result->metadata['scores'][$dim[0]] ?? 0;
-                    $v2 = $result->metadata['scores'][$dim[1]] ?? 0;
-                    $total = ($v1 + $v2) ?: 1;
-                    $p = max($v1, $v2) / $total * 100;
-                    $leftWins = $v1 >= $v2;
-                @endphp
-                <div class="dim-row">
-                    <div class="dim-text">
-                        <span style="float: left; {{ $leftWins ? 'color:#4f46e5;' : 'color:#94a3b8;' }}">{{ $dim[2] }}: {{ $v1 }}</span>
-                        <span style="float: right; {{ !$leftWins ? 'color:#4f46e5;' : 'color:#94a3b8;' }}">{{ $v2 }} :{{ $dim[3] }}</span>
-                    </div>
-                    <div class="progress-bg">
-                        <div class="progress-fill" style="width: {{ $p }}%; margin-left: {{ $leftWins ? '0' : (100 - $p) . '%' }}"></div>
+                <div style="text-align: center; padding: 25px; background: #f0fdf4; border-radius: 15px; margin-bottom: 25px;">
+                    <div style="font-size: 10px; color: #666; font-weight: bold; text-transform: uppercase;">Perfil Identificado</div>
+                    <div style="font-size: 60px; font-weight: 900; color: #22c55e; letter-spacing: 10px; margin: 10px 0;">{{ $type }}</div>
+                    <div style="font-size: 24px; font-weight: bold; color: #000;">{{ $mbtiInfo[$type]['name'] ?? '' }}</div>
+                    <div style="margin-top: 15px; font-size: 11px; color: #4b5563;">
+                        {{ $result->user_name }} &bull; {{ $result->completed_at->format('d/m/Y') }}
                     </div>
                 </div>
-            @endforeach
 
-            @if(isset($mbtiInfo[$type]))
-            <div class="section-title">Interpretación y Rasgos</div>
-            <div class="detail-box">
-                <p style="margin-top: 0; color: #475569; font-size: 10.5px;">{{ $mbtiInfo[$type]['description'] }}</p>
-                <div style="margin-top: 15px;">
-                    <div style="font-weight: bold; margin-bottom: 5px; color: #065f46;">Fortalezas Principales:</div>
-                    @foreach($mbtiInfo[$type]['strengths'] as $st)
-                        <span class="tag tag-s">{{ $st }}</span>
-                    @endforeach
-                </div>
-                <div style="margin-top: 10px;">
-                    <div style="font-weight: bold; margin-bottom: 5px; color: #991b1b;">Áreas de Oportunidad / Debilidades:</div>
-                    @foreach($mbtiInfo[$type]['weaknesses'] as $wk)
-                        <span class="tag tag-w">{{ $wk }}</span>
+                <div class="section-title">Análisis de Dimensiones</div>
+
+                <div class="mbti-container">
+                    @php
+                        $mScores = $result->metadata['scores'] ?? [];
+                        $dims = [
+                            ['E', 'EXTROVERSIÓN', 'I', 'INTROVERSIÓN'],
+                            ['S', 'SENSACIÓN', 'N', 'INTUICIÓN'],
+                            ['T', 'PENSAMIENTO', 'F', 'SENTIMIENTO'],
+                            ['J', 'JUICIO', 'P', 'PERCEPCIÓN']
+                        ];
+                        // In the 72-question MBTI, there are 9 questions per dimension.
+                        $maxPossible = 9;
+                    @endphp
+
+                    @foreach($dims as $d)
+                        @php
+                            $vLeft = $mScores[$d[0]] ?? 0;
+                            $vRight = $mScores[$d[2]] ?? 0;
+                            $isLeftDominant = $vLeft >= $vRight;
+                            // Calculate percentage for the bar based on the dominant score
+                            $dominantScore = $isLeftDominant ? $vLeft : $vRight;
+                            $percent = ($dominantScore / $maxPossible) * 100;
+                            $percent = min($percent, 100);
+                        @endphp
+                        <div class="mbti-row">
+                            <div class="mbti-labels">
+                                <span class="label-left" style="color: {{ $isLeftDominant ? '#007bff' : '#6b7280' }}">
+                                    {{ $d[1] }}: {{ $vLeft }}
+                                </span>
+                                <span class="label-right" style="color: {{ !$isLeftDominant ? '#007bff' : '#6b7280' }}">
+                                    {{ $vRight }}: {{ $d[3] }}
+                                </span>
+                            </div>
+                            <div class="mbti-bar-bg">
+                                <div class="mbti-bar-fill" style="width: {{ $percent }}%; {{ $isLeftDominant ? 'left: 0;' : 'right: 0;' }}"></div>
+                            </div>
+                        </div>
                     @endforeach
                 </div>
             </div>
-            @endif
+
+            <div class="page-break">
+                <div class="header-box">
+                    <div class="brand">
+                    <img src="./logoexcel.png"  style="width: 40px; height: 40px" class="fw-800 fs-4"/></div>
+                    <div class="title">{{ $type }} - {{ $mbtiInfo[$type]['name'] ?? '' }}</div>
+                </div>
+
+                <div class="section-title">Descripción Detallada</div>
+                <div style="padding: 20px; background: #fff; border: 1px solid #eee; border-radius: 12px; line-height: 1.6;">
+                    <p style="font-size: 11px; color: #374151; text-align: justify;">{{ $mbtiInfo[$type]['description'] ?? '' }}</p>
+
+                    <div style="margin-top: 25px;">
+                        <h4 style="color: #166534; font-size: 12px; margin-bottom: 10px; border-bottom: 1px solid #dcfce7; padding-bottom: 5px;">Fortalezas Principales</h4>
+                        @foreach($mbtiInfo[$type]['strengths'] ?? [] as $s)
+                            <span class="tag tag-green">{{ $s }}</span>
+                        @endforeach
+                    </div>
+
+                    <div style="margin-top: 20px;">
+                        <h4 style="color: #991b1b; font-size: 12px; margin-bottom: 10px; border-bottom: 1px solid #fee2e2; padding-bottom: 5px;">Áreas de Crecimiento</h4>
+                        @foreach($mbtiInfo[$type]['weaknesses'] ?? [] as $w)
+                            <span class="tag tag-red">{{ $w }}</span>
+                        @endforeach
+                    </div>
+                </div>
+            </div>
         @endforeach
 
     @elseif($result->test_type == 'dones')
-        <div class="section-title">Cuadro de Calificación Técnica</div>
-        <table class="table-dones">
+        <div class="header-box">
+            <div class="brand">
+                    <img src="./logoexcel.png"  style="width: 40px; height: 40px" class="fw-800 fs-4"/></div>
+            <div class="title">Resultado de Dones Espirituales</div>
+            <p style="margin-top: 5px; font-weight: bold; font-size: 11px;">{{ $result->user_name }} &bull; {{ $result->pair_name }}</p>
+        </div>
+
+        <div class="section-title">Desglose Técnico de Calificación</div>
+        <table class="tech-table">
             @php
                 $cols = 14; $rows = 7;
                 $codes = ["Adm","Dis","Evan","Exh","Fe","Dar","Con","Lid","Mis","Past","Pro","Serv","Ense","Sab"];
@@ -120,7 +298,7 @@
             @for($r = 0; $r < $rows; $r++)
                 <tr>
                     @for($c = 0; $c < $cols; $c++)
-                        <td class="header-cell">{{ ($r * $cols) + $c + 1 }}</td>
+                        <td class="cell-num">{{ ($r * $cols) + $c + 1 }}</td>
                     @endfor
                 </tr>
                 <tr>
@@ -131,31 +309,27 @@
             @endfor
             <tr>
                 @for($c = 0; $c < $cols; $c++)
-                    <td class="total-cell">{{ $totals[$c] }}</td>
+                    <td class="cell-total">{{ $totals[$c] }}</td>
                 @endfor
             </tr>
             <tr>
                 @for($c = 0; $c < $cols; $c++)
-                    <td class="code-cell">{{ $codes[$c] }}</td>
+                    <td class="cell-code">{{ $codes[$c] }}</td>
                 @endfor
             </tr>
         </table>
 
-        <div class="section-title">Ranking de Dones Espirituales</div>
-        <div style="border: 1px solid #e2e8f0; border-radius: 10px;">
-            @foreach($result->metadata['dones_ranking'] ?? [] as $index => $don)
-                <div class="rank-item">
-                    <div class="rank-num">{{ $index + 1 }}</div>
-                    <span class="rank-label">{{ $donesInfo[$don['code']] ?? $don['code'] }}</span>
-                    <span style="color: #64748b; font-size: 10px;">({{ $don['code'] }})</span>
-                    <span class="rank-pts">{{ $don['score'] }} pts</span>
+        <div class="section-title" style="margin-top: 20px;">Ranking de Dones</div>
+        <div class="dones-container">
+            @foreach($result->metadata['dones_ranking'] ?? [] as $don)
+                <div class="dones-card">
+                    <div class="dones-name">{{ $donesInfo[$don['code']] ?? $don['code'] }}</div>
+                    <div class="dones-badge">{{ $don['score'] }}</div>
                 </div>
             @endforeach
+            <div style="clear: both; height: 1px;"></div>
         </div>
-    @endif
 
-    <div class="footer">
-        Centro de Descubrimiento - Excelencia Cristiana &copy; {{ date('Y') }} - Sistema de Gestión de Parejas
-    </div>
+    @endif
 </body>
 </html>

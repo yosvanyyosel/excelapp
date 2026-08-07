@@ -10,6 +10,8 @@ return new class extends Migration {
         Schema::create('discovery_centers', function (Blueprint $table) {
             $table->id();
             $table->string('name');
+            $table->string('location')->nullable();
+            $table->string('event_date')->nullable(); // Ej: "del 8 al 11 de Julio del 2026"
             $table->string('banner_photo')->nullable();
             $table->integer('quiz_timer')->default(15); // Segundos configurables
             $table->timestamps();

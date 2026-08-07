@@ -6,7 +6,13 @@ use Illuminate\Database\Eloquent\Model;
 
 class DiscoveryCenter extends Model
 {
-    protected $fillable = ['name', 'banner_photo', 'quiz_timer'];
+    protected $fillable = [
+        'name',
+        'location',
+        'event_date',
+        'banner_photo',
+        'quiz_timer'
+    ];
 
     public function users()
     {
