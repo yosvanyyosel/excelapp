@@ -2,6 +2,7 @@ services:
      - type: web
        name: excelapp
        runtime: php
+       rootDir: SERVIDOR
        buildCommand: |
          composer install --no-dev --optimize-autoloader
          php artisan config:cache
