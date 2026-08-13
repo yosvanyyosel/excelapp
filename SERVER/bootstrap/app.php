@@ -1,42 +1,84 @@
 <?php
 
-use App\Http\Middleware\VerificaAccesoIglesia;
-use App\Http\Middleware\VerificaAccesoMinisterio;
-use App\Http\Middleware\VerificaAccesosGenerales;
-use App\Http\Middleware\VerificaPermisoMinisterio;
-use App\Http\Middleware\VerificaPermisoModuloIglesia;
-use App\Http\Middleware\VerificaRolAdministrador;
-use App\Http\Middleware\VerificaRolEnMinisterio;
-use App\Http\Middleware\VerificaRolMiembro;
-use App\Http\Middleware\VerificaRolPastor;
 use Illuminate\Foundation\Application;
-use Illuminate\Foundation\Configuration\Exceptions;
-use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Foundation\Http\Kernel as HttpKernelBase;
+use Illuminate\Foundation\Console\Kernel as ConsoleKernelBase;
+use Illuminate\Foundation\Exceptions\Handler as ExceptionHandlerBase;
+use Illuminate\Contracts\Http\Kernel as HttpKernelContract;
+use Illuminate\Contracts\Console\Kernel as ConsoleKernelContract;
+use Illuminate\Contracts\Debug\ExceptionHandler as ExceptionHandlerContract;
+use Illuminate\Console\Scheduling\Schedule;
+use Throwable;
 
-return Application::configure(basePath: dirname(__DIR__))
-    ->withRouting(
-        web: __DIR__.'/../routes/web.php',
-        api: __DIR__.'/../routes/api.php',
-        commands: __DIR__.'/../routes/console.php',
-        health: '/up',
-    )
-    ->withMiddleware(function (Middleware $middleware) {
-          // Registrar middlewares globales (se ejecutan en cada request)
-        /*  $middleware->web(append: [
-            \App\Http\Middleware\CurrentIglesia::class,
-        ]);*/
-        
-        
-        $middleware->alias([
-            'rol_permisos' => \App\Http\Middleware\RolPermisosMiddleware::class,
-            'suscripcion' => \App\Http\Middleware\VerificarSuscripcion::class,
-            'rol.admin' => \App\Http\Middleware\RolAdmin::class,
-            'rol.web' => \App\Http\Middleware\RolWeb::class,
-           // 'permiso.modulo' => \App\Http\Middleware\CheckModulePermission::class,
-            //'role' => \App\Http\Middleware\EnsureUserRole::class
-            
-        ]);
-    })
-    ->withExceptions(function (Exceptions $exceptions) {
-        //
-    })->create();
+/**
+ * Http Kernel
+ */
+class HttpKernel extends HttpKernelBase
+{
+    protected $middleware = [
+        \Illuminate\Foundation\Http\Middleware\CheckForMaintenanceMode::class,
+    ];
+
+    protected $middlewareGroups = [
+        'web' => [
+            \Illuminate\Session\Middleware\StartSession::class,
+            \Illuminate\View\Middleware\ShareErrorsFromSession::class,
+        ],
+        'api' => [
+            'throttle:60,1',
+            \Illuminate\Routing\Middleware\SubstituteBindings::class,
+        ],
+    ];
+
+    protected $routeMiddleware = [
+    ];
+}
+
+/**
+ * Console Kernel
+ */
+class ConsoleKernel extends ConsoleKernelBase
+{
+    protected function schedule(Schedule $schedule)
+    {
+        // Ejemplo: $schedule->command('emails:send')->daily();
+    }
+
+    protected function commands()
+    {
+        $this->load(__DIR__.'/../app/Console/Commands');
+        require __DIR__.'/../routes/console.php';
+    }
+}
+
+/**
+ * Exception Handler
+ */
+class Handler extends ExceptionHandlerBase
+{
+    protected $dontReport = [];
+
+    protected $dontFlash = ['password','password_confirmation'];
+
+    public function register()
+    {
+        $this->reportable(function (Throwable $e) {
+            // lógica de reporte
+        });
+
+        $this->renderable(function (Throwable $e, $request) {
+            // lógica de renderizado
+        });
+    }
+}
+
+/**
+ * Bootstrap Application
+ */
+$app = new Application(dirname(__DIR__));
+
+$app->singleton(HttpKernelContract::class, HttpKernel::class);
+$app->singleton(ConsoleKernelContract::class, ConsoleKernel::class);
+$app->singleton(ExceptionHandlerContract::class, Handler::class);
+
+return $app;
