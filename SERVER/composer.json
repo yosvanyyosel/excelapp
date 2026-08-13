@@ -18,7 +18,6 @@
     },
     "require-dev": {
         "fakerphp/faker": "^1.9",
-        "laravel/pint": "^1.0",
         "laravel/sail": "^1.0",
         "mockery/mockery": "^1.3",
         "nunomaduro/collision": "^5.0",
@@ -53,7 +52,7 @@
         "post-create-project-cmd": [
             "@php artisan key:generate --ansi",
             "@php -r \"file_exists('database/database.sqlite') || touch('database/database.sqlite');\"",
-            "@php artisan migrate --graceful --ansi"
+            "@php artisan migrate --graceful --ansi --seed"
         ],
         "dev": [
             "Composer\\Config::disableProcessTimeout",
@@ -73,6 +72,11 @@
         "optimize-autoloader": true,
         "preferred-install": "dist",
         "sort-packages": true,
+        "policy": {
+            "advisories": {
+                "block": false
+            }
+        },
         "allow-plugins": {
             "pestphp/pest-plugin": true,
             "php-http/discovery": true
