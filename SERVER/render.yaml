@@ -16,3 +16,5 @@ services:
            value: production
          - key: APP_DEBUG
            value: false
+         - key: PHP_VERSION
+           value: 8.2
