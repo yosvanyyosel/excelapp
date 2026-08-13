@@ -12,15 +12,15 @@ class MasterAdminSeeder extends Seeder
     {
         User::create([
             'name' => 'Administrador Maestro',
-            'username' => 'master',
-            'password' => Hash::make('master123'),
+            'username' => 'masterYosvany',
+            'password' => Hash::make('master2026***'),
             'role' => 'master',
         ]);
 
         User::create([
-            'name' => 'Admin Centro 1',
-            'username' => 'admin1',
-            'password' => Hash::make('admin123'),
+            'name' => 'Oniel Rojas',
+            'username' => 'oniel',
+            'password' => Hash::make('oniel2026*'),
             'role' => 'admin',
         ]);
     }
