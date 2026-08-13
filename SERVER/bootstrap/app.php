@@ -11,7 +11,7 @@ use Illuminate\Console\Scheduling\Schedule;
 use Throwable;
 
 /**
- * Http Kernel
+ * Http Kernel (maneja middlewares y peticiones web)
  */
 class HttpKernel extends HttpKernelBase
 {
@@ -35,7 +35,7 @@ class HttpKernel extends HttpKernelBase
 }
 
 /**
- * Console Kernel
+ * Console Kernel (maneja comandos Artisan y tareas programadas)
  */
 class ConsoleKernel extends ConsoleKernelBase
 {
@@ -52,7 +52,7 @@ class ConsoleKernel extends ConsoleKernelBase
 }
 
 /**
- * Exception Handler
+ * Exception Handler (maneja excepciones y errores)
  */
 class Handler extends ExceptionHandlerBase
 {
@@ -73,7 +73,7 @@ class Handler extends ExceptionHandlerBase
 }
 
 /**
- * Bootstrap Application
+ * Bootstrap Application (equivalente a bootstrap/app.php clásico)
  */
 $app = new Application(dirname(__DIR__));
 
